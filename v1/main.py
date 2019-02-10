@@ -1,10 +1,10 @@
-import numpy as np, pandas as pd
-from utils import initialize_parameters, initialize_parameters_deep, linear_forward, linear_activation_forward, L_model_forward, compute_cost, linear_backward, linear_activation_backward, L_model_backward, update_parameters, predict, L_layer_model, normalize, read_data, generate_datasets
+import pandas as pd
+from utility.utils import L_layer_model, predict, normalize, read_data, generate_datasets
     
 
 data = read_data('crypto-test-data-82hrs.csv')
 data = data[data['ticker'] == 'ETHBTC']
-data['timestamp'] =pd.to_datetime(data.timestamp)
+data['timestamp'] = pd.to_datetime(data.timestamp)
 data = data[['high', 'low', 'price', 'volume', 'timestamp']].sort_values(by='timestamp')
 data = data.set_index('timestamp')
 
@@ -23,7 +23,7 @@ print('Testing set shape: ' + str(X_test.shape))
 #     d. Update parameters (using parameters, and grads from backprop) 
 # 4. Use trained parameters to predict labels
 
-layers_dims = [X_train.shape[0], 16, 6, Y_train.shape[0]] #  4-layer model
+layers_dims = [X_train.shape[0], 16, 6, Y_train.shape[0]]  # 4-layer model
 
 # Current Cost after iteration 5900: 0.000760 (without normalization)
 # Cost after iteration 5900: 0.291479 (with normalization)
