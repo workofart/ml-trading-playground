@@ -21,3 +21,6 @@ Sample Accuracy for predicting the price at the next timestamp (10-sec timestamp
 Keras-based Neural Network
 
 ![Img](https://raw.githubusercontent.com/workofart/work-trader/master/v2/trainingset.png)
+
+### Version 3
+Custom Neural Network with Reinforcement Learning (Deep Q Learning) using gym

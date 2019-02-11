@@ -1,7 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD, Adagrad
-from utility.utils import read_data, generate_datasets, evaluate_result
+from utilityV2.utils import read_data, generate_datasets, evaluate_result
 from sklearn.preprocessing import normalize
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -39,5 +39,5 @@ model.fit(X_train, Y_train, epochs=6000, batch_size=X_train.shape[0]) # Currentl
 y_hat_train = model.predict(X_train, batch_size=X_train.shape[0])
 evaluate_result(y_hat_train, X_train, Y_train, model, 'train')
 
-y_hat_test = model.predict(X_train, batch_size=X_train.shape[0])
+y_hat_test = model.predict(X_test, batch_size=X_test.shape[0])
 evaluate_result(y_hat_test, X_test, Y_test, model, 'test')

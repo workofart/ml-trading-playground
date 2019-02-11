@@ -31,8 +31,8 @@ def generate_datasets(data):
     X = normalize(X)
     Y = normalize(Y)
 
-    # X = norm2(X, axis=0) # Currently disabled
-    # Y = norm2(Y, axis=0) # # Currently disabled
+#     X = norm2(X, axis=0) # Currently disabled
+#     Y = norm2(Y, axis=0) # # Currently disabled
 
 
     X_train, X_test, Y_train, Y_test = train_test_split(
