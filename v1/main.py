@@ -30,8 +30,8 @@ print('Testing set shape: ' + str(X_test.shape))
 
 layers_dims = [X_train.shape[0], 16, 6, Y_train.shape[0]]  # 4-layer model
 
-# Current Cost after iteration 5900: 0.000760 (without normalization)
-# Cost after iteration 5900: 0.291479 (with normalization)
+# Current Cost after iteration 6000: 0.000760 (without normalization)
+# Cost after iteration 6000: 0.291479 (with normalization)
 parameters = L_layer_model(X_train, Y_train, layers_dims, learning_rate=0.03, print_cost=True)
 
 pred_train = predict(X_train, Y_train, parameters, 'train')

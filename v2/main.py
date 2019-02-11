@@ -1,7 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD, Adagrad
-from utility.utils import read_data, generate_datasets
+from utility.utils import read_data, generate_datasets, evaluate_result
 from sklearn.preprocessing import normalize
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,21 +31,13 @@ model = Sequential()
 model.add(Dense(16, input_dim=X_train.shape[1], activation='relu'))
 model.add(Dense(6, activation='relu'))
 model.add(Dense(Y_train.shape[1]))
-# model.compile(optimizer=SGD(lr=0.03), loss='mse') # Stochastic Gradient Descent
-model.compile(optimizer=Adagrad(lr=0.01), loss='mse') # Adam
+model.compile(optimizer=SGD(lr=0.03), loss='mse') # Stochastic Gradient Descent
+# model.compile(optimizer=Adagrad(lr=0.01), loss='mse') # Adam, Currently in sync with v1, use SGD
 
-model.fit(X_train, Y_train, epochs=50, batch_size=4)
+model.fit(X_train, Y_train, epochs=6000, batch_size=X_train.shape[0]) # Currently in sync with v1, no batch training
 
-model.evaluate(X_test, Y_test, batch_size=8)
-y_hat = model.predict(X_train, batch_size=8)
+y_hat_train = model.predict(X_train, batch_size=X_train.shape[0])
+evaluate_result(y_hat_train, X_train, Y_train, model, 'train')
 
-
-plt.plot(np.squeeze(y_hat)[0:100], marker=None,
-         color='red', markersize=1, linewidth=1)
-plt.plot(np.squeeze(Y_train)[0:100], marker=None,
-         color='blue', markersize=1, linewidth=1)
-plt.ylabel('normalized price')
-plt.xlabel('time step')
-plt.title("Predicted Prices")
-plt.legend(['predict', 'true'], loc='upper left')
-plt.show()
+y_hat_test = model.predict(X_train, batch_size=X_train.shape[0])
+evaluate_result(y_hat_test, X_test, Y_test, model, 'test')

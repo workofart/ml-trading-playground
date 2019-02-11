@@ -31,15 +31,33 @@ def generate_datasets(data):
     X = normalize(X)
     Y = normalize(Y)
 
-    # X = norm2(X, axis=0)
-    # Y = norm2(Y, axis=0)
+    # X = norm2(X, axis=0) # Currently disabled
+    # Y = norm2(Y, axis=0) # # Currently disabled
 
 
     X_train, X_test, Y_train, Y_test = train_test_split(
         X, Y, test_size=0.33, random_state=42)
+
+    # Due to the differences between Keras and the hand-coded forward/backward prop implementations
+    # the orientation of the data is different. shape = (row, col), where row = # samples, col = # features
+    # Therefore, transposition is not necessary
     # X_train = X_train.T
     # X_test = X_test.T
     # Y_train = Y_train.T
     # Y_test = Y_test.T
 
     return X_train, X_test, Y_train, Y_test
+
+def evaluate_result(pred, x, y, model, mode):
+    accuracy = model.evaluate(x, y, batch_size=8)
+
+    plt.plot(np.squeeze(pred)[0:100], marker=None,
+            color='red', markersize=1, linewidth=1)
+    plt.plot(np.squeeze(y)[0:100], marker=None,
+            color='blue', markersize=1, linewidth=1)
+    plt.ylabel('normalized price')
+    plt.xlabel('time step')
+    plt.title(mode + " Predicted Prices")
+    plt.legend(['predict', 'true'], loc='upper left')
+    plt.show()
+    return accuracy
