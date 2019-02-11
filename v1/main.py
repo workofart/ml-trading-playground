@@ -1,6 +1,11 @@
 import pandas as pd
 from utility.utils import L_layer_model, predict, normalize, read_data, generate_datasets
     
+"""
+This version 1 will attempt to use a hand-coded multi-layer neural network
+to predict the next price of a particular cryptocurrency given the current
+price, volume, high price, low price of a given timestep
+"""
 
 data = read_data('crypto-test-data-82hrs.csv')
 data = data[data['ticker'] == 'ETHBTC']
