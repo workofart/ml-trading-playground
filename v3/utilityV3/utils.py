@@ -66,3 +66,22 @@ def evaluate_result(pred, x, y, model, mode):
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
     return accuracy
+
+def plot_trades(prices, actions):
+    plt.plot(prices)
+    for i, action in enumerate(actions):
+        if action == 0:
+            plt.annotate('x', xy=(i, prices[i]), color='green')
+        elif action == 1:
+            plt.annotate('x', xy=(i, prices[i]), color='red')
+        elif action == 2:
+            plt.annotate('x', xy=(i, np.mean(prices)), color='yellow')
+    plt.ylabel('Prices')
+    plt.xlabel('Timesteps')
+    plt.show()
+
+def plot_reward(rewards):
+    plt.plot(rewards)
+    plt.ylabel('Avg Reward')
+    plt.xlabel('Timesteps')
+    plt.show()
