@@ -12,9 +12,6 @@ I wanted to first try to predict prices given the current, high, low prices and 
 ### Version 1
 Hand-coded Neural Network (without using any 3rd party framework)
 
-
-Sample Accuracy for predicting the price at the next timestamp (10-sec timestamps)
-
 ![Img](https://raw.githubusercontent.com/workofart/work-trader/master/v1/trainingset.png)
 
 ### Version 2
@@ -23,4 +20,9 @@ Keras-based Neural Network
 ![Img](https://raw.githubusercontent.com/workofart/work-trader/master/v2/trainingset.png)
 
 ### Version 3
+Tensorflow-based Neural Network
+
+![Img](https://raw.githubusercontent.com/workofart/work-trader/master/v3/trainingset.png)
+
+### Playground
 Custom Neural Network with Reinforcement Learning (Deep Q Learning) using gym

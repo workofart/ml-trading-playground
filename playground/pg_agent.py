@@ -1,4 +1,5 @@
 import numpy as np, random
+from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD, Adagrad
@@ -10,9 +11,8 @@ from keras.utils import to_categorical
 GAMMA = 0.9 # discount factor for target Q 
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.1 # final value of epsilon
-BATCH_SIZE = 16 # size of minibatch
 LEARNING_RATE = 1e-4
-TRAINING_EPOCHS = 100
+TRAINING_EPOCHS = 5
 NEURONS_PER_DIM = 32
 
 # Vector Shapes
@@ -23,7 +23,7 @@ class PG_Agent():
         # init some parameters
         self.epsilon = INITIAL_EPSILON
         self.env = env
-        self.replay_buffer = []
+        self.replay_buffer = deque(maxlen=5000)
         self.state_dim = env.observation_space.shape[1] + 2 # portfolio and cash
         self.action_dim = len(env.action_space)
         self.state_input = np.zeros((1, self.state_dim))
@@ -33,23 +33,26 @@ class PG_Agent():
     
     def create_pg_network(self, data):
         model = Sequential()
-        model.add(Dense(self.state_dim*NEURONS_PER_DIM, input_shape=(self.state_dim,), activation='relu', kernel_initializer='random_uniform'))
+        model.add(Dense(self.state_dim*NEURONS_PER_DIM, input_shape=(self.state_dim,), activation='relu', bias_initializer='zero', kernel_initializer='glorot_normal'))
         model.add(Dense(self.action_dim, activation='softmax'))
         # model.compile(optimizer=Adagrad(lr=0.01), loss=categorical_crossentropy) # Adam
-        model.compile(optimizer='rmsprop', loss=categorical_crossentropy) # Adam
+        model.compile(optimizer='rmsprop', loss=categorical_crossentropy) # rmsprop
         self.network = model
     
-    def train_pg_network(self):
-        replay_samples = random.sample(self.replay_buffer, BATCH_SIZE * 5)
+    def train_pg_network(self, batch_size=32):
+        replay_samples = self.replay_buffer[random.randint(0, len(self.replay_buffer)-1)]
+        # replay_samples = random.sample(self.replay_buffer, batch_size)
         state_batch = np.squeeze([data[0] for data in replay_samples])
         y_batch = np.squeeze([data[1] for data in replay_samples])
-        self.network.fit(state_batch, y_batch, epochs=TRAINING_EPOCHS, batch_size=BATCH_SIZE, verbose=0)
-        self.replay_buffer = []
+        self.network.fit(state_batch, y_batch, epochs=TRAINING_EPOCHS, batch_size=batch_size, verbose=0)
+        # self.replay_buffer = []
 
     # TODO: TBD
     def accuracy(self, model, x):
         return model.evaluate(x, self.y_input, verbose=1)
     
+    # The random choice is actually still sampling with a given
+    # probability distribution
     def policy_forward(self, state):
         y = np.zeros([self.action_dim])
         pred_prob = self.network.predict(state)[0]
@@ -68,7 +71,7 @@ class PG_Agent():
         temp = []
         for index, value in enumerate(states):
             temp.append([states[index], [actions[index]]])
-        self.replay_buffer += temp
+        self.replay_buffer.append(temp)
 
     def discounted_rewards(self, reward):
         reward_discounted = np.zeros_like(reward)

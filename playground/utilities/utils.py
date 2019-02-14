@@ -33,11 +33,11 @@ def generate_datasets(data):
     assert (X.shape[1] == 4)
     assert (Y.shape[1] == 1)
 
-    X = normalize(X)
-    Y = normalize(Y)
+#     X = normalize(X)
+#     Y = normalize(Y)
 
-    # X = norm2(X, axis=0) # Currently disabled
-    # Y = norm2(Y, axis=0) # # Currently disabled
+    X = norm2(X, axis=0) # Currently disabled
+    Y = norm2(Y, axis=0) # # Currently disabled
 
 
     X_train, X_test, Y_train, Y_test = train_test_split(
@@ -53,7 +53,9 @@ def generate_datasets(data):
 
     return X_train, X_test, Y_train, Y_test
 
-def evaluate_result(pred, x, y, mode):
+def evaluate_result(pred, x, y, model, mode):
+    accuracy = model.evaluate(x, y, batch_size=8)
+
     plt.plot(np.squeeze(pred)[0:100], marker=None,
             color='red', markersize=1, linewidth=1)
     plt.plot(np.squeeze(y)[0:100], marker=None,
@@ -63,6 +65,7 @@ def evaluate_result(pred, x, y, mode):
     plt.title(mode + " Predicted Prices")
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
+    return accuracy
 
 def plot_trades(prices, actions):
     plt.plot(prices)
