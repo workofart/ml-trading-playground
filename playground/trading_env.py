@@ -28,25 +28,20 @@ class TradingEnv():
     # Reset method called between episodes
     def reset(self):
         self.episode_total_reward = 0
-        # self.time_step = 0
+        self.time_step = 0
         self.portfolio = 0
         self.cash = INIT_CASH
         return self._get_obs()
 
-    def step(self, action, agent, isTrain = False):
+    def step(self, action, isTrain = False):
         done = False
-        # state = np.reshape(np.concatenate((data['state'][step], [self.cash], [self.portfolio])), (1, 6))
-        # if isTrain:
-        # grad, action = self.policy_forward(state)
-        # else:
-            # grad, action = self.act(state)
         state = self._get_obs()
         reward = self.process_action(action, state)
-        self.time_step += 1
         # if self.time_step > self.STEPS_PER_EPISODE - 1:
-        if self.time_step > self.observation_space.shape[0] - 1:
+        if self.time_step >= self.observation_space.shape[0] - 1:
             done = True
         self.episode_total_reward += reward
+        self.time_step += 1
         return state, reward, done, {}
 
     def _get_obs(self, pos=None):
