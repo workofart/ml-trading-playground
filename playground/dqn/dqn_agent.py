@@ -20,7 +20,7 @@ class DQN_Agent():
         self.epsilon = INITIAL_EPSILON
         self.env = env
         self.isTrain = True
-        self.replay_buffer = deque(maxlen=5000)
+        self.replay_buffer = []
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.learning_rate = LEARNING_RATE
@@ -57,13 +57,21 @@ class DQN_Agent():
         B1 = tf.Variable(tf.zeros([NN1_NEURONS]))
         layer1 = tf.nn.relu(tf.add(tf.matmul(self.state_input, W1), B1))
 
-        W2 = tf.Variable(tf.random_normal([NN1_NEURONS, NN2_NEURONS]))
-        B2 = tf.Variable(tf.zeros([NN2_NEURONS]))
+        W2 = tf.Variable(tf.random_normal([NN1_NEURONS, NN1_NEURONS]))
+        B2 = tf.Variable(tf.zeros([NN1_NEURONS]))
         layer2 = tf.nn.relu(tf.add(tf.matmul(layer1, W2), B2))
 
+        W3 = tf.Variable(tf.random_normal([NN1_NEURONS, NN2_NEURONS]))
+        B3 = tf.Variable(tf.zeros([NN2_NEURONS]))
+        layer3 = tf.nn.relu(tf.add(tf.matmul(layer2, W3), B3))
+
+        W4 = tf.Variable(tf.random_normal([NN2_NEURONS, NN2_NEURONS]))
+        B4 = tf.Variable(tf.zeros([NN2_NEURONS]))
+        layer4 = tf.nn.relu(tf.add(tf.matmul(layer3, W4), B4))
+
         W_O = tf.Variable(tf.random_normal([NN2_NEURONS, 1]))
-        B3 = tf.Variable(tf.zeros([1]))
-        output = tf.add(tf.matmul(layer2, W_O), B3)
+        B5 = tf.Variable(tf.zeros([1]))
+        output = tf.add(tf.matmul(layer4, W_O), B5)
 
         self.Q_value = output
 
@@ -77,7 +85,9 @@ class DQN_Agent():
     def train_dqn_network(self, batch_size=32):
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
         # replay_samples = self.replay_buffer[random.randint(0, len(self.replay_buffer)-1)]
-        replay_samples = random.sample(self.replay_buffer, batch_size)
+        # random.sample(self.replay_buffer, batch_size)
+        rand = random.randint(0, len(self.replay_buffer) - batch_size)
+        replay_samples = self.replay_buffer[rand:rand+batch_size]
 
         state_batch = np.reshape([data[0] for data in replay_samples], (batch_size, 4))
         action_batch = np.reshape([data[1] for data in replay_samples], (batch_size, self.action_dim))

@@ -3,9 +3,9 @@ import numpy as np, pandas as pd
 from playground.dqn.dqn_agent import DQN_Agent
 from playground.env.trading_env import TradingEnv
 
-EPISODE = 30 # Episode limitation
+EPISODE = 200 # Episode limitation
 TEST = 3 # The number of experiment test every 1 episode, for reducing variance
-TRAIN_EVERY_STEPS = 200
+TRAIN_EVERY_STEPS = 100
 BATCH_SIZE = 32 # size of minibatch
 
 
@@ -16,7 +16,7 @@ def main():
     reward_plot_data = []
     for i in range(EPISODE):
         done = False
-        agent.replay_buffer.clear()
+        agent.replay_buffer = []
         state = agent.env.reset()
         print('---- Episode %d ----' %(i))
         while done is False:
