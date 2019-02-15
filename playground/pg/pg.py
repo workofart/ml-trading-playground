@@ -1,7 +1,7 @@
 from utilities.utils import read_data, generate_datasets, plot_trades, plot_reward
 import numpy as np, pandas as pd
-from pg_agent import PG_Agent
-from trading_env import TradingEnv
+from pg.pg_agent import PG_Agent
+from env.trading_env import TradingEnv
 # ---------------------------------------------------------
 EPISODE = 10000 # Episode limitation
 TEST = 10 # The number of experiment test every TEST_EVERY_N_BATCHES episode, for reducing variance
@@ -64,7 +64,7 @@ def main():
                         # state = agent.env.reset()
                         # for step in range(agent.env.STEPS_PER_EPISODE):
                     grad, action = agent.policy_forward(state) # direct action for test
-                    state, reward, done, _ = agent.env.step(action, agent, True)
+                    state, reward, done, _ = agent.env.step(action)
                     total_reward += reward
                     # if done:
                         # break

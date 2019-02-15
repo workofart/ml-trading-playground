@@ -105,3 +105,6 @@ venv.bak/
 
 # IDE
 .vscode/
+
+# Project Specific
+saved_networks/
