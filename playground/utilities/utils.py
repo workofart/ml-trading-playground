@@ -53,9 +53,7 @@ def generate_datasets(data):
 
     return X_train, X_test, Y_train, Y_test
 
-def evaluate_result(pred, x, y, model, mode):
-    accuracy = model.evaluate(x, y, batch_size=8)
-
+def evaluate_result(pred, x, y, mode):
     plt.plot(np.squeeze(pred)[0:100], marker=None,
             color='red', markersize=1, linewidth=1)
     plt.plot(np.squeeze(y)[0:100], marker=None,
@@ -65,7 +63,6 @@ def evaluate_result(pred, x, y, model, mode):
     plt.title(mode + " Predicted Prices")
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
-    return accuracy
 
 def plot_trades(prices, actions):
     plt.plot(prices)
