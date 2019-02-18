@@ -1,12 +1,13 @@
 import numpy as np
-from utilities.utils import read_data
+from playground.utilities.utils import read_data
 
 # Inspired by https://github.com/openai/gym/blob/master/gym/envs/algorithmic/algorithmic_env.py
 
 
 # Trading Params
-INIT_CASH = 5
-HOLD_PENALTY = 0.0005
+INIT_CASH = 0
+# HOLD_PENALTY = 0.0005
+HOLD_PENALTY = 0
 # TXN_COST = 0.005
 TXN_COST = 0
 
@@ -20,8 +21,10 @@ class TradingEnv():
         self.time_step = 0
         self.episode_total_reward = None
         self.action_space = [0, 1, 2]
-        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC').values * 10
+        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC').values[0:9000]
         self.STEPS_PER_EPISODE = 2000
+        # self.next_state = np.reshape(self.observation_space[self.time_step + 1], (1, 4))
+        self.previous_reward = 0
         self.reset()
 
 
@@ -37,7 +40,6 @@ class TradingEnv():
         done = False
         state = self._get_obs()
         reward = self.process_action(action, state)
-        # if self.time_step > self.STEPS_PER_EPISODE - 1:
         if self.time_step >= self.observation_space.shape[0] - 1:
             done = True
         self.episode_total_reward += reward
@@ -46,8 +48,9 @@ class TradingEnv():
 
     def _get_obs(self, pos=None):
         if pos is None:
-            return np.reshape(np.concatenate((self.observation_space[self.time_step], [self.cash], [self.portfolio])), (1, 6))
-            # np.reshape(self.observation_space[self.time_step], (1, self.observation_space.shape[1]))
+            return np.reshape(self.observation_space[self.time_step], (1, 4))
+        else:
+            return np.reshape(self.observation_space[pos], (1, 4))
 
     def process_action(self, action, state):
         # Buy
@@ -66,5 +69,6 @@ class TradingEnv():
             self.cash = self.cash - HOLD_PENALTY
             self.portfolio = self.portfolio
         
-        reward = self.cash + self.portfolio * state[0][2]
+        reward =  self.cash + self.portfolio * state[0][2] - self.previous_reward
+        self.previous_reward = reward
         return reward
