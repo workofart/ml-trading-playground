@@ -92,7 +92,24 @@ def plot_reward(rewards):
     plt.plot(rewards)
     plt.ylabel('Avg Reward')
     plt.xlabel('Timesteps')
-    plt.show()
+    plt.draw()
+    plt.pause(0.001)
+    # plt.show()
+
+def plot_reward_cost(rewards, costs):
+    plt.subplot(2,1,1)
+    plt.plot(rewards)
+    plt.ylabel('Rewards')
+    plt.xlabel('Timesteps')
+    # plt.draw()
+    # plt.pause(0.001)
+    plt.subplot(2,1,2)
+    plt.plot(costs)
+    plt.ylabel('Costs')
+    plt.xlabel('Timesteps')
+    plt.draw()
+    plt.pause(0.001)
+    
 
 def generateTimeSeriesBatches(data, input_size, num_steps):
     seq = [np.array(data[i * input_size: (i + 1) * input_size]) 

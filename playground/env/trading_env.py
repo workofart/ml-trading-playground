@@ -13,17 +13,16 @@ TXN_COST = 0
 
 class TradingEnv():
 
-    def __init__(self):
+    def __init__(self, data_length):
         # Trading Params
         self.portfolio = 0
         self.cash = INIT_CASH
 
         self.time_step = 0
+        self.data_length = data_length
         self.episode_total_reward = None
         self.action_space = [0, 1, 2]
-        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC').values[0:9000]
-        self.STEPS_PER_EPISODE = 2000
-        # self.next_state = np.reshape(self.observation_space[self.time_step + 1], (1, 4))
+        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC').values[0:data_length]
         self.previous_reward = 0
         self.reset()
 

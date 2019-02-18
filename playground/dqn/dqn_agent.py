@@ -12,19 +12,15 @@ DECAY = 0.993 # epsilon decay
 GAMMA = 0.9 # discount factor for q value
 UPDATE_TARGET_FREQ = 750 # how many timesteps to update target network params
 
-# NN Parameters
-NN1_NEURONS = 128
-NN2_NEURONS = 64
-
 # TODO: Use Experience Buffer for sampling and adding experience
 
 class DQN_Agent():
 
-    def __init__(self, env):
+    def __init__(self, env, isTrain = True):
         # init some parameters
         self.epsilon = INITIAL_EPSILON
         self.env = env
-        self.isTrain = True
+        self.isTrain = isTrain
         self.replay_buffer = []
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
@@ -43,7 +39,7 @@ class DQN_Agent():
         # loading networks
         self.saver = tf.train.Saver()
         checkpoint = tf.train.get_checkpoint_state("saved_networks")
-        if checkpoint and checkpoint.model_checkpoint_path:
+        if self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path:
                 self.saver.restore(self.session, checkpoint.model_checkpoint_path)
                 print("Successfully loaded:", checkpoint.model_checkpoint_path)
         else:
@@ -106,7 +102,9 @@ class DQN_Agent():
                                 self.network.state_input: state_batch
                             }
         )
-        if self.env.time_step % 3000 == 0: print("Timestep:", '%04d' % (self.env.time_step+1), "cost={}".format(c))
+        if self.env.time_step % (self.env.data_length / 3) == 0:
+            print("Timestep:", '%04d' % (self.env.time_step+1), "cost={}".format(c))
+            return c
 
         ################## TESTING ##################
         # if self.env.time_step % 1000 == 0:
@@ -119,21 +117,20 @@ class DQN_Agent():
         #                     })) + " - " + gv[1].name)
 
         # save network every 1000 iteration
-        if self.env.time_step % 1000 == 0:
+        if self.env.time_step % (self.env.data_length / 9) == 0:
             self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.env.time_step)
 
 
     def act(self, state):
         if self.env.time_step > 200 and self.epsilon > FINAL_EPSILON:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 9000
+            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / self.env.data_length
 
-        output = self.network.output.eval(feed_dict = {
-			self.network.state_input:state
-			})[0]
-        
         if random.random() <= self.epsilon and self.isTrain is True:
             return random.randint(0, self.action_dim - 1)
         else:
+            output = self.network.output.eval(feed_dict = {
+			self.network.state_input:state
+			})[0]
             return np.argmax(output)
 
     def perceive(self, state, action, reward, next_state, done):

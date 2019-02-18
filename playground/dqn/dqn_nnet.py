@@ -2,8 +2,8 @@ import tensorflow as tf
 
 
 # NN Parameters
-NN1_NEURONS = 64
-NN2_NEURONS = 32
+NN1_NEURONS = 128
+NN2_NEURONS = 64
 beta = 0.01 # regularization
 dropout = 0.1 # dropout
 
@@ -49,5 +49,5 @@ class DQN_NNET:
             self.cost = tf.reduce_mean(self.cost + reg * beta)
 
             # Optimizer
-            self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
+            self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.cost)
     
