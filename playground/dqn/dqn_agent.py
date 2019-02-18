@@ -8,13 +8,13 @@ from playground.dqn.dqn_nnet import DQN_NNET
 LEARNING_RATE = 1e-4
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.1 # ending value of epislon
-DECAY = 0.99 # epsilon decay
+DECAY = 0.993 # epsilon decay
 GAMMA = 0.9 # discount factor for q value
-UPDATE_TARGET_FREQ = 200 # how many timesteps to update target network params
+UPDATE_TARGET_FREQ = 750 # how many timesteps to update target network params
 
 # NN Parameters
-NN1_NEURONS = 64
-NN2_NEURONS = 32
+NN1_NEURONS = 128
+NN2_NEURONS = 64
 
 # TODO: Use Experience Buffer for sampling and adding experience
 
@@ -108,6 +108,16 @@ class DQN_Agent():
         )
         if self.env.time_step % 3000 == 0: print("Timestep:", '%04d' % (self.env.time_step+1), "cost={}".format(c))
 
+        ################## TESTING ##################
+        # if self.env.time_step % 1000 == 0:
+        #     grads_and_vars = tf.train.AdamOptimizer(self.learning_rate).compute_gradients(self.network.cost)
+        #     for gv in grads_and_vars:
+        #         print(str(self.session.run(gv[1], feed_dict={
+        #                         self.network.Q_input: np.reshape(y_batch, (batch_size, 1)),
+        #                         self.network.action_input: action_batch,
+        #                         self.network.state_input: state_batch
+        #                     })) + " - " + gv[1].name)
+
         # save network every 1000 iteration
         if self.env.time_step % 1000 == 0:
             self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.env.time_step)
@@ -115,7 +125,7 @@ class DQN_Agent():
 
     def act(self, state):
         if self.env.time_step > 200 and self.epsilon > FINAL_EPSILON:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 5000
+            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 9000
 
         output = self.network.output.eval(feed_dict = {
 			self.network.state_input:state

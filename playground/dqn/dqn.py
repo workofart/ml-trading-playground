@@ -5,10 +5,9 @@ from playground.env.trading_env import TradingEnv
 
 EPISODE = 100 # Episode limitation
 TEST = 3 # The number of experiment test every 1 episode, for reducing variance
-TRAIN_EVERY_STEPS = 20
+TRAIN_EVERY_STEPS = 50
 BATCH_SIZE = 64 # size of minibatch
-TRAIN_STEPS = 30
-TEST_STEPS = 50
+TEST_STEPS = 100
 
 def main():
     env = TradingEnv()

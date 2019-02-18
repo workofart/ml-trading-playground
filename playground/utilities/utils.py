@@ -33,8 +33,8 @@ def generate_datasets(data):
     assert (X.shape[1] == 4)
     assert (Y.shape[1] == 1)
 
-    # X = normalize(X)
-    # Y = normalize(Y)
+    X = normalize(X)
+    Y = normalize(Y)
 
     # X = norm2(X, axis=0) # Currently disabled
     # Y = norm2(Y, axis=0) # # Currently disabled
