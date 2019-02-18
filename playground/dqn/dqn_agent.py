@@ -102,7 +102,7 @@ class DQN_Agent():
                                 self.network.state_input: state_batch
                             }
         )
-        if self.env.time_step % (self.env.data_length / 3) == 0:
+        if self.env.time_step % int(self.env.data_length / 3) == 0:
             print("Timestep:", '%04d' % (self.env.time_step+1), "cost={}".format(c))
             return c
 
@@ -117,7 +117,7 @@ class DQN_Agent():
         #                     })) + " - " + gv[1].name)
 
         # save network every 1000 iteration
-        if self.env.time_step % (self.env.data_length / 9) == 0:
+        if self.env.time_step % int(self.env.data_length / 9) == 0:
             self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.env.time_step)
 
 

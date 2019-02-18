@@ -15,3 +15,5 @@ plt.axis([-50,50,0,10000])
         plt.pause(0.001)
         input("Press [enter] to continue.")
 ```
+
+need to normalize the input data, because volume and price are not on the same scale, which makes training hard to converge to global min

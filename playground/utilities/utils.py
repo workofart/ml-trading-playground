@@ -12,6 +12,8 @@ def read_data(filename, ticker):
     data['timestamp'] = pd.to_datetime(data.timestamp)
     data = data[['high', 'low', 'price', 'volume', 'timestamp']].sort_values(by='timestamp')
     data = data.set_index('timestamp')
+
+    data = norm2(data.values, axis=0)
     return data
 
 def normalize(data):
@@ -82,8 +84,8 @@ def plot_trades(prices, actions):
             # plt.annotate('x', xy=(i, prices[i]), color='red')
         # elif action == 2:
             # plt.annotate('x', xy=(i, np.mean(prices)), color='yellow')
-    plt.plot(buys['x'], buys['y'], '^', markersize=10, color='g')
-    plt.plot(sells['x'], sells['y'], 'v', markersize=10, color='r')
+    plt.plot(buys['x'], buys['y'], '^', markersize=1, color='g')
+    plt.plot(sells['x'], sells['y'], 'v', markersize=1, color='r')
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
     plt.show()

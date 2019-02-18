@@ -22,7 +22,7 @@ class TradingEnv():
         self.data_length = data_length
         self.episode_total_reward = None
         self.action_space = [0, 1, 2]
-        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC').values[0:data_length]
+        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC')[0:data_length]
         self.previous_reward = 0
         self.reset()
 
