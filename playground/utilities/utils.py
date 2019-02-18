@@ -33,11 +33,11 @@ def generate_datasets(data):
     assert (X.shape[1] == 4)
     assert (Y.shape[1] == 1)
 
-#     X = normalize(X)
-#     Y = normalize(Y)
+    # X = normalize(X)
+    # Y = normalize(Y)
 
-    X = norm2(X, axis=0) # Currently disabled
-    Y = norm2(Y, axis=0) # # Currently disabled
+    # X = norm2(X, axis=0) # Currently disabled
+    # Y = norm2(Y, axis=0) # # Currently disabled
 
 
     X_train, X_test, Y_train, Y_test = train_test_split(
@@ -66,13 +66,24 @@ def evaluate_result(pred, x, y, mode):
 
 def plot_trades(prices, actions):
     plt.plot(prices)
+    buys, sells = {}, {}
+    buys['x'] = []
+    buys['y'] = []
+    sells['x'] = []
+    sells['y'] = []
     for i, action in enumerate(actions):
         if action == 0:
-            plt.annotate('x', xy=(i, prices[i]), color='green')
+            buys['x'].append(i)
+            buys['y'].append(prices[i])
+            # plt.annotate('x', xy=(i, prices[i]), color='green')
         elif action == 1:
-            plt.annotate('x', xy=(i, prices[i]), color='red')
+            sells['x'].append(i)
+            sells['y'].append(prices[i])
+            # plt.annotate('x', xy=(i, prices[i]), color='red')
         # elif action == 2:
             # plt.annotate('x', xy=(i, np.mean(prices)), color='yellow')
+    plt.plot(buys['x'], buys['y'], '^', markersize=10, color='g')
+    plt.plot(sells['x'], sells['y'], 'v', markersize=10, color='r')
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
     plt.show()
@@ -82,3 +93,16 @@ def plot_reward(rewards):
     plt.ylabel('Avg Reward')
     plt.xlabel('Timesteps')
     plt.show()
+
+def generateTimeSeriesBatches(data, input_size, num_steps):
+    seq = [np.array(data[i * input_size: (i + 1) * input_size]) 
+       for i in range(len(data) // input_size)]
+
+    # Split into groups of `num_steps`
+    X = np.array([seq[i: i + num_steps] for i in range(len(seq) - num_steps)])
+    y = np.array([seq[i + num_steps] for i in range(len(seq) - num_steps)])
+    return X, y
+
+# data = read_data('crypto-test-data-82hrs.csv', 'ETHBTC')
+# X_train_orig, X_test_orig, Y_train_orig, Y_test_orig = generate_datasets(data)
+# X, y = generateTimeSeriesBatches(X_train_orig, 3, 2)

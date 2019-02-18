@@ -97,7 +97,7 @@ def L_model_forward(X, parameters, last_activation='linear', learning_rate=0.007
                                           parameters["W" + str(L)],
                                           parameters["b" + str(L)],
                                           activation=last_activation,
-                                          learning_rate=learning_rate)  # TODO: enable default value
+                                          learning_rate=learning_rate)
     caches.append(cache)
 
     assert(AL.shape == (1, X.shape[1]))
