@@ -17,3 +17,5 @@ plt.axis([-50,50,0,10000])
 ```
 
 need to normalize the input data, because volume and price are not on the same scale, which makes training hard to converge to global min
+
+never leave the epsilon the same across episodes, as it will stay at the min value and cause the agent to fully trust the actions output by the q-network

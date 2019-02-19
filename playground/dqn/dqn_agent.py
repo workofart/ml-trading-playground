@@ -3,6 +3,7 @@ import numpy as np
 import random
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
+from playground.dqn.experience_buffer import Experience_Buffer
 
 # Hyper Parameters for DQN
 LEARNING_RATE = 1e-4
@@ -10,7 +11,6 @@ INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.1 # ending value of epislon
 DECAY = 0.993 # epsilon decay
 GAMMA = 0.9 # discount factor for q value
-UPDATE_TARGET_FREQ = 750 # how many timesteps to update target network params
 
 # TODO: Use Experience Buffer for sampling and adding experience
 
@@ -21,11 +21,11 @@ class DQN_Agent():
         self.epsilon = INITIAL_EPSILON
         self.env = env
         self.isTrain = isTrain
-        self.replay_buffer = []
+        self.replay_buffer = Experience_Buffer()
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.learning_rate = LEARNING_RATE
-        self.update_target_net_freq = UPDATE_TARGET_FREQ
+        self.update_target_net_freq = env.data_length / 10 # how many timesteps to update target network params
 
         # Reset the graph
         tf.reset_default_graph()
@@ -67,8 +67,7 @@ class DQN_Agent():
     def train_dqn_network(self, batch_size=32):
         self.update_target_q_net_if_needed(self.env.time_step)
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
-        rand = random.randint(0, len(self.replay_buffer) - batch_size)
-        replay_samples = self.replay_buffer[rand:rand+batch_size]
+        replay_samples = self.replay_buffer.sample(batch_size)
 
         state_batch = np.reshape([data[0] for data in replay_samples], (batch_size, 4))
         action_batch = np.reshape([data[1] for data in replay_samples], (batch_size, self.action_dim))
@@ -122,7 +121,7 @@ class DQN_Agent():
 
 
     def act(self, state):
-        if self.env.time_step > 200 and self.epsilon > FINAL_EPSILON:
+        if self.isTrain is True and self.epsilon > FINAL_EPSILON:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / self.env.data_length
 
         if random.random() <= self.epsilon and self.isTrain is True:
@@ -137,4 +136,4 @@ class DQN_Agent():
         # Assumes "replay_buffer" contains [state, action, reward, next_state, done]
         one_hot_action = np.zeros(self.action_dim)
         one_hot_action[action] = 1
-        self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
+        self.replay_buffer.add([state, one_hot_action, reward, next_state, done])

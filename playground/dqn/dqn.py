@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from playground.dqn.dqn_agent import DQN_Agent
 from playground.env.trading_env import TradingEnv
 
-EPISODE = 56 # Episode limitation
+EPISODE = 100 # Episode limitation
 TEST = 3 # The number of experiment test every 1 episode, for reducing variance
 TRAIN_EVERY_STEPS = 1
 TEST_EVERY_EP = 5
@@ -21,9 +21,10 @@ def main():
     plt.show()
     for i in range(EPISODE):
         print('---- Episode %d ----' %(i))
+        agent.epsilon = 1 # need to reset epsilon for every new episode
         state = agent.env.reset() # To start the process
         done = False
-        agent.replay_buffer = []
+        agent.replay_buffer.clear()
         cost_per_episode = []
         while done is False:
             action = agent.act(state)
@@ -31,7 +32,7 @@ def main():
             if done is False:
                 next_state = agent.env._get_obs() # Get the next state
                 agent.perceive(state, action, reward, next_state, done)
-                if len(agent.replay_buffer) > BATCH_SIZE and env.time_step % TRAIN_EVERY_STEPS == 0:
+                if agent.replay_buffer.size() > BATCH_SIZE and env.time_step % TRAIN_EVERY_STEPS == 0:
                     c = agent.train_dqn_network(BATCH_SIZE)
                     if c is not None:
                         cost_per_episode.append(c)
