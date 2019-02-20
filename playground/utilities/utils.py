@@ -13,7 +13,7 @@ def read_data(filename, ticker):
     data = data[['high', 'low', 'price', 'volume', 'timestamp']].sort_values(by='timestamp')
     data = data.set_index('timestamp')
 
-    data = norm2(data.values, axis=0)
+    data = norm2(data.values, axis=0) # If 1, independently normalize each sample, otherwise (if 0) normalize each feature.
     return data
 
 def normalize(data):
@@ -66,8 +66,9 @@ def evaluate_result(pred, x, y, mode):
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
 
-def plot_trades(prices, actions):
-    plt.plot(prices)
+def plot_trades(EP, prices, actions):
+    plt.clf()
+    plt.plot(prices, linewidth=1, color='#808080')
     buys, sells = {}, {}
     buys['x'] = []
     buys['y'] = []
@@ -84,13 +85,15 @@ def plot_trades(prices, actions):
             # plt.annotate('x', xy=(i, prices[i]), color='red')
         # elif action == 2:
             # plt.annotate('x', xy=(i, np.mean(prices)), color='yellow')
-    plt.plot(buys['x'], buys['y'], '^', markersize=1, color='g')
-    plt.plot(sells['x'], sells['y'], 'v', markersize=1, color='r')
+    plt.plot(buys['x'], buys['y'], '^', markersize=3, color='g')
+    plt.plot(sells['x'], sells['y'], 'v', markersize=3, color='r')
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
-    plt.show()
+    plt.savefig('playground/snapshots/test_trades_EP{}.png'.format(EP))
+    # plt.show()
 
 def plot_reward(rewards):
+    plt.clf()
     plt.plot(rewards)
     plt.ylabel('Avg Reward')
     plt.xlabel('Timesteps')
@@ -98,17 +101,32 @@ def plot_reward(rewards):
     plt.pause(0.001)
     # plt.show()
 
-def plot_reward_cost(rewards, costs):
-    plt.subplot(2,1,1)
+def plot_data(rewards, costs, q_vals, drawdown):
+    plt.clf()
+    avg_rewards = np.empty(len(rewards))
+    avg_rewards.fill(np.mean(rewards))
+    avg_rewards = avg_rewards.tolist()
+    plt.subplot(4,1,1)
     plt.plot(rewards)
+    plt.plot(avg_rewards, color='yellow')
     plt.ylabel('Rewards')
     plt.xlabel('Timesteps')
-    # plt.draw()
-    # plt.pause(0.001)
-    plt.subplot(2,1,2)
+    
+    plt.subplot(4,1,2)
+    plt.plot(drawdown)
+    plt.ylabel('Drawdown')
+    plt.xlabel('Timesteps')
+
+    plt.subplot(4,1,3)
     plt.plot(costs)
     plt.ylabel('Costs')
     plt.xlabel('Timesteps')
+
+    plt.subplot(4,1,4)
+    plt.plot(q_vals)
+    plt.ylabel('Q Value Variance')
+    plt.xlabel('Timesteps')
+
     plt.draw()
     plt.pause(0.001)
     

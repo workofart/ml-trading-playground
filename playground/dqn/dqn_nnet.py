@@ -2,10 +2,11 @@ import tensorflow as tf
 
 
 # NN Parameters
-NN1_NEURONS = 128
-NN2_NEURONS = 64
+NN1_NEURONS = 32
+NN2_NEURONS = 16
+# NN3_NEURONS = 8
 beta = 0.01 # regularization
-dropout = 0.1 # dropout
+dropout = 0.03 # dropout
 
 class DQN_NNET:
 
@@ -33,7 +34,7 @@ class DQN_NNET:
             self.B2 = tf.Variable(dtype=tf.float64, initial_value=tf.zeros([NN2_NEURONS], tf.float64))
             self.layer2 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.layer1, self.W2), self.B2)), keep_prob=(1-dropout))
 
-            self.W_O = tf.Variable(dtype=tf.float64, initial_value=tf.random_normal([NN2_NEURONS, 1], dtype=tf.float64))
+            self.W_O = tf.Variable(dtype=tf.float64, initial_value=tf.random_normal([NN2_NEURONS, self.action_dim], dtype=tf.float64))
             self.B3 = tf.Variable(dtype=tf.float64, initial_value=tf.zeros([self.action_dim], tf.float64))
             self.output = tf.add(tf.matmul(self.layer2, self.W_O), self.B3)
 
