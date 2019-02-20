@@ -1,4 +1,5 @@
 import tensorflow as tf
+from playground.utilities.utils import variable_summaries
 
 
 # NN Parameters
@@ -69,6 +70,21 @@ class DQN_NNET:
             with tf.name_scope("train"):
                 self.cost = tf.reduce_mean(self.cost + reg * beta, name='cost')
                 self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.cost)
+
+            # Tensorboard Stats
+            variable_summaries(self.W1)
+            variable_summaries(self.W2)
+            variable_summaries(self.W_O)
+
+            variable_summaries(self.B1)
+            variable_summaries(self.B2)
+            variable_summaries(self.B_O)
+
+            variable_summaries(self.layer1)
+            variable_summaries(self.layer2)
+
+            variable_summaries(self.output)
+            variable_summaries(self.Q_value)
 
         # def relu_layer(self, size_in, size_out, name='relu'):
         #     with tf.name_scope(name):

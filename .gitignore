@@ -108,4 +108,4 @@ venv.bak/
 # Project Specific
 saved_networks/
 logs/
-playground/snapshots
+playground/snapshots/*.png

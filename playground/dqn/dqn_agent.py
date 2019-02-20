@@ -30,10 +30,15 @@ class DQN_Agent():
         tf.reset_default_graph()
         self.network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'q_network')
         self.target_network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'target_q_network')
-        
+
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initializers.global_variables())
+
+        # Tensorboard
+        merged = tf.summary.merge_all()
+        summary_writer = tf.summary.FileWriter('logs')
+        summary_writer.add_graph(self.session.graph)
 
         # loading networks
         self.saver = tf.train.Saver()
@@ -43,10 +48,6 @@ class DQN_Agent():
                 print("Successfully loaded:", checkpoint.model_checkpoint_path)
         else:
                 print("Could not find old network weights")
-
-        # global summary_writer
-        summary_writer = tf.summary.FileWriter('logs')
-        summary_writer.add_graph(self.session.graph)
 
         # TESTING
         self.q_vals = []

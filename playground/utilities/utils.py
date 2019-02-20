@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize as norm2
+import tensorflow as tf
 
 def read_data(filename, ticker):
     data = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', filename)))
@@ -135,3 +136,16 @@ def generateTimeSeriesBatches(data, input_size, num_steps):
     X = np.array([seq[i: i + num_steps] for i in range(len(seq) - num_steps)])
     y = np.array([seq[i + num_steps] for i in range(len(seq) - num_steps)])
     return X, y
+
+def variable_summaries(var):
+  """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+  # Taken from https://www.tensorflow.org/guide/summaries_and_tensorboard
+  with tf.name_scope('summaries'):
+    mean = tf.reduce_mean(var)
+    tf.summary.scalar('mean', mean)
+    with tf.name_scope('stddev'):
+      stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+    tf.summary.scalar('stddev', stddev)
+    tf.summary.scalar('max', tf.reduce_max(var))
+    tf.summary.scalar('min', tf.reduce_min(var))
+    tf.summary.histogram('histogram', var)
