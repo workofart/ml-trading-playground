@@ -78,18 +78,14 @@ def plot_trades(EP, prices, actions):
         if action == 0:
             buys['x'].append(i)
             buys['y'].append(prices[i])
-            # plt.annotate('x', xy=(i, prices[i]), color='green')
         elif action == 1:
             sells['x'].append(i)
             sells['y'].append(prices[i])
-            # plt.annotate('x', xy=(i, prices[i]), color='red')
-        # elif action == 2:
-            # plt.annotate('x', xy=(i, np.mean(prices)), color='yellow')
     plt.plot(buys['x'], buys['y'], '^', markersize=3, color='g')
     plt.plot(sells['x'], sells['y'], 'v', markersize=3, color='r')
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
-    plt.savefig('playground/snapshots/test_trades_EP{}.png'.format(EP))
+    plt.savefig(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'snapshots', 'test_trades_EP{}.png'.format(EP))))
     # plt.show()
 
 def plot_reward(rewards):
@@ -139,7 +135,3 @@ def generateTimeSeriesBatches(data, input_size, num_steps):
     X = np.array([seq[i: i + num_steps] for i in range(len(seq) - num_steps)])
     y = np.array([seq[i + num_steps] for i in range(len(seq) - num_steps)])
     return X, y
-
-# data = read_data('crypto-test-data-82hrs.csv', 'ETHBTC')
-# X_train_orig, X_test_orig, Y_train_orig, Y_test_orig = generate_datasets(data)
-# X, y = generateTimeSeriesBatches(X_train_orig, 3, 2)

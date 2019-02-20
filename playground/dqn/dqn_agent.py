@@ -45,7 +45,8 @@ class DQN_Agent():
                 print("Could not find old network weights")
 
         # global summary_writer
-        # summary_writer = tf.summary.FileWriter('logs',graph=self.session.graph)
+        summary_writer = tf.summary.FileWriter('logs')
+        summary_writer.add_graph(self.session.graph)
 
         # TESTING
         self.q_vals = []
