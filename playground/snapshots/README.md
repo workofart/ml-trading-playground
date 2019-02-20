@@ -1,0 +1,1 @@
+This folder contains the test trade snapshots to visualize how the agent is performing at various training episodes.
