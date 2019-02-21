@@ -45,7 +45,7 @@ def main():
                 next_state = agent.env._get_obs() # Get the next state
                 agent.perceive(state, action, reward, next_state, done)
                 if agent.replay_buffer.size() > BATCH_SIZE and env.time_step % TRAIN_EVERY_STEPS == 0:
-                    c = agent.train_dqn_network(BATCH_SIZE)
+                    c = agent.train_dqn_network(i, BATCH_SIZE)
                     if c is not None:
                         cost_per_episode.append(c)
         reward_plot_data.append(np.mean(avg_reward_list))

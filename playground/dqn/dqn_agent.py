@@ -36,9 +36,8 @@ class DQN_Agent():
         self.session.run(tf.initializers.global_variables())
 
         # Tensorboard
-        merged = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('logs')
-        summary_writer.add_graph(self.session.graph)
+        self.summary_writer = tf.summary.FileWriter('logs')
+        self.summary_writer.add_graph(self.session.graph)
 
         # loading networks
         self.saver = tf.train.Saver()
@@ -68,7 +67,7 @@ class DQN_Agent():
             self.session.run(op_holder)
             # print('Timesteps:{} | Target Q-network has been updated.'.format(self.env.time_step))
 
-    def train_dqn_network(self, batch_size=32):
+    def train_dqn_network(self, ep, batch_size=32):
         self.update_target_q_net_if_needed(self.env.time_step)
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
         replay_samples = self.replay_buffer.sample(batch_size)
@@ -98,13 +97,16 @@ class DQN_Agent():
                 y_batch.append(reward_batch[i] + GAMMA * target_q_val_batch[i][action])
 
         # Train on one batch on the Q-network
-        _, c = self.session.run([self.network.optimizer, self.network.cost],
+        _, c, summary = self.session.run([self.network.optimizer, self.network.cost, self.network.merged_summary],
+        # _, c = self.session.run([self.network.optimizer, self.network.cost],
                             feed_dict={
                                 self.network.Q_input: np.reshape(y_batch, (batch_size, 1)),
                                 self.network.action_input: action_batch,
                                 self.network.state_input: state_batch
                             }
         )
+        self.summary_writer.add_summary(summary, ep)
+
         # if self.env.time_step % int(self.env.data_length / 3) == 0:
         # print("Timestep:", '%04d' % (self.env.time_step+1), "cost={}".format(c))
         return c

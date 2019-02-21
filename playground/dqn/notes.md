@@ -12,6 +12,9 @@
 
 ## FAQ
 
+#### Tensorboard Summaries raising placeholder type mismatch error
+The merged summary merged = tf.merge_all_summaries() is taking into account previous summaries (coming from I don't know where), which depend on placeholders not initialized.
+
 #### Pyplot drawing graphs without blocking the main thread
 
 ```

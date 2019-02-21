@@ -138,14 +138,16 @@ def generateTimeSeriesBatches(data, input_size, num_steps):
     return X, y
 
 def variable_summaries(var):
-  """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
-  # Taken from https://www.tensorflow.org/guide/summaries_and_tensorboard
-  with tf.name_scope('summaries'):
-    mean = tf.reduce_mean(var)
-    tf.summary.scalar('mean', mean)
-    with tf.name_scope('stddev'):
-      stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-    tf.summary.scalar('stddev', stddev)
-    tf.summary.scalar('max', tf.reduce_max(var))
-    tf.summary.scalar('min', tf.reduce_min(var))
-    tf.summary.histogram('histogram', var)
+    out = []
+    """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+    # Taken from https://www.tensorflow.org/guide/summaries_and_tensorboard
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        out.append(tf.summary.scalar(var.op.name + '_mean', mean))
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        out.append(tf.summary.scalar(var.op.name + '_stddev', stddev))
+        out.append(tf.summary.scalar(var.op.name + '_max', tf.reduce_max(var)))
+        out.append(tf.summary.scalar(var.op.name + '_min', tf.reduce_min(var)))
+        out.append(tf.summary.histogram(var.op.name + '_histogram', var))
+        return out
