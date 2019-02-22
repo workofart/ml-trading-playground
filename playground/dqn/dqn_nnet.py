@@ -85,18 +85,20 @@ class DQN_NNET:
 
             output_summary = variable_summaries(self.output)
             Q_value_summary = variable_summaries(self.Q_value)
+            cost_summary = variable_summaries(self.cost)
 
         self.merged_summary = tf.summary.merge(
                        W1_summary +
                        W2_summary +
                        W_O_summary +
-                       B1_summary +
-                       B2_summary +
-                       B_O_summary +
-                       layer1_summary +
-                       layer2_summary +
+                    #    B1_summary +
+                    #    B2_summary +
+                    #    B_O_summary +
+                    #    layer1_summary +
+                    #    layer2_summary +
                        output_summary +
-                       Q_value_summary
+                       Q_value_summary +
+                       cost_summary
                        )
 
         # def relu_layer(self, size_in, size_out, name='relu'):

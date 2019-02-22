@@ -1,20 +1,20 @@
 import numpy as np
-from playground.utilities.utils import read_data
+from playground.utilities.utils import read_data, cleanup_logs
 
 # Inspired by https://github.com/openai/gym/blob/master/gym/envs/algorithmic/algorithmic_env.py
 
 
 # Trading Params
-INIT_CASH = 0
-HOLD_PENALTY = 0.001
-# HOLD_PENALTY = 0
-# TXN_COST = 0.005
-TXN_COST = 0
+INIT_CASH = 100
+# HOLD_PENALTY = 0.001
+HOLD_PENALTY = 0
+TXN_COST = 0.0002
+# TXN_COST = 0
 REPEAT_TRADE_THRESHOLD = 15
 
 # Reward
-MIN_REWARD = -1
-MAX_REWARD = 1
+MIN_REWARD = -2
+MAX_REWARD = 2
 
 class TradingEnv():
 
@@ -28,13 +28,16 @@ class TradingEnv():
         self.episode_total_reward = None
         self.action_space = [0, 1, 2]
         self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC')[0:data_length] * 1000
-        self.previous_reward = 0
+        self.previous_portfolio = self.cash
         self.reset()
 
         # Reward Function
         self.buys = 0
         self.sells = 0
         self.holds = 0
+
+        # Cleanup
+        cleanup_logs()
 
     # Reset method called between episodes
     def reset(self):
@@ -69,36 +72,44 @@ class TradingEnv():
 
     def process_action(self, action, state):
         cur_price = state[0][2]
+        error = False
         # Buy
         if action == 0:
-            # print('buying')
-            self.cash -= cur_price * (1+TXN_COST)# buy with current price of current state
-            self.portfolio += 1
-            self.buys += 1
-            self.sells = 0
-            self.holds = 0
+            if cur_price > self.cash:
+                error = True
+            else:
+                self.cash -= cur_price * (1+TXN_COST)# buy with current price of current state
+                self.portfolio += 1
+                self.buys += 1
+                self.sells = 0
+                self.holds = 0
         # Sell
         elif action == 1:
-            # print('selling')
-            self.cash += cur_price * (1-TXN_COST) 
-            self.portfolio -= 1
-            self.sells += 1
-            self.buys = 0
-            self.holds = 0
+            if self.portfolio <= 0:
+                error = True
+            else:
+                self.cash += cur_price * (1-TXN_COST)
+                self.portfolio -= 1
+                self.sells += 1
+                self.buys = 0
+                self.holds = 0
         # Hold
         elif action == 2:
-            # print('holding')
             self.cash = self.cash - HOLD_PENALTY
             self.portfolio = self.portfolio
             self.holds+= 1
             self.buys = 0
             self.sells = 0
 
-        reward = self.cash + self.portfolio * cur_price - max(self.previous_reward, 0)
+        if error:
+            reward = -1
+        else:
+            reward = (self.cash + self.portfolio * cur_price - self.previous_portfolio) * 100
 
         # Enhance reward function based on behavior
         # if self.holds > REPEAT_TRADE_THRESHOLD or self.buys > REPEAT_TRADE_THRESHOLD or self.sells > REPEAT_TRADE_THRESHOLD:
         #     reward -= 0.2
 
-        self.previous_reward = reward
+        # Previous reward should be the previous portfolio market value, not the difference
+        self.previous_portfolio = self.cash + self.portfolio * cur_price
         return reward

@@ -10,6 +10,8 @@
 
 - the last layer of the neural network should be of "action_dim" not "1"
 
+- I've been seeing, after 3000 episodes of training, the reward function following a sine-way like function and I suspect it has something to do with epsilon. I think it makes sense to update epsilon after every episode, as opposed to after every timestep, because timestep 0 and timestep n doesn't really mean anything for exploration and exploitation, but episode 0 and episode 1000 means a lot, the latter will more likely have a better trained model and thus require less for exploration and more for exploitation.
+
 ## FAQ
 
 #### Tensorboard Summaries raising placeholder type mismatch error

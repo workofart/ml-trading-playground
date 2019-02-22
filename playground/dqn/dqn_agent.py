@@ -4,13 +4,15 @@ import random
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
 from playground.dqn.experience_buffer import Experience_Buffer
+from playground.utilities.utils import variable_summaries
 
 # Hyper Parameters for DQN
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 3e-5
 INITIAL_EPSILON = 1 # starting value of epsilon
-FINAL_EPSILON = 0.1 # ending value of epislon
+FINAL_EPSILON = 0.05 # ending value of epislon
 DECAY = 0.993 # epsilon decay
 GAMMA = 0.99 # discount factor for q value
+UPDATE_TARGET_NETWORK = 10
 
 class DQN_Agent():
 
@@ -24,7 +26,8 @@ class DQN_Agent():
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.learning_rate = LEARNING_RATE
-        self.update_target_net_freq = int(env.data_length / 5)# how many timesteps to update target network params
+        self.update_target_net_freq = UPDATE_TARGET_NETWORK # how many timesteps to update target network params
+        self.is_updated_target_net = False
 
         # Reset the graph
         tf.reset_default_graph()
@@ -48,11 +51,9 @@ class DQN_Agent():
         else:
                 print("Could not find old network weights")
 
-        # TESTING
-        self.q_vals = []
         
     def update_target_q_net_if_needed(self, step):
-        if step % self.update_target_net_freq == 0 and step > 0:
+        if step % self.update_target_net_freq == 0 and step > 0 and self.is_updated_target_net is False:
             # Get the parameters of our DQNNetwork
             from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "q_network")
             
@@ -65,10 +66,12 @@ class DQN_Agent():
             for from_var,to_var in zip(from_vars,to_vars):
                 op_holder.append(to_var.assign(from_var))
             self.session.run(op_holder)
+
+            self.is_updated_target_net = True
             # print('Timesteps:{} | Target Q-network has been updated.'.format(self.env.time_step))
 
     def train_dqn_network(self, ep, batch_size=32):
-        self.update_target_q_net_if_needed(self.env.time_step)
+        self.update_target_q_net_if_needed(ep)
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
         replay_samples = self.replay_buffer.sample(batch_size)
 
@@ -94,11 +97,10 @@ class DQN_Agent():
             if done:
                 y_batch.append(reward_batch[i])
             else:
-                y_batch.append(reward_batch[i] + GAMMA * target_q_val_batch[i][action])
+                y_batch.append(max(-1, min(reward_batch[i] + GAMMA * target_q_val_batch[i][action], 1)))
 
         # Train on one batch on the Q-network
         _, c, summary = self.session.run([self.network.optimizer, self.network.cost, self.network.merged_summary],
-        # _, c = self.session.run([self.network.optimizer, self.network.cost],
                             feed_dict={
                                 self.network.Q_input: np.reshape(y_batch, (batch_size, 1)),
                                 self.network.action_input: action_batch,
@@ -107,28 +109,16 @@ class DQN_Agent():
         )
         self.summary_writer.add_summary(summary, ep)
 
-        # if self.env.time_step % int(self.env.data_length / 3) == 0:
-        # print("Timestep:", '%04d' % (self.env.time_step+1), "cost={}".format(c))
-        return c
-
-        ################## TESTING ##################
-        # if self.env.time_step % 1000 == 0:
-        #     grads_and_vars = tf.train.AdamOptimizer(self.learning_rate).compute_gradients(self.network.cost)
-        #     for gv in grads_and_vars:
-        #         print(str(self.session.run(gv[1], feed_dict={
-        #                         self.network.Q_input: np.reshape(y_batch, (batch_size, 1)),
-        #                         self.network.action_input: action_batch,
-        #                         self.network.state_input: state_batch
-        #                     })) + " - " + gv[1].name)
-
         # save network 9 times per episode
         if self.env.time_step % int(self.env.data_length / 9) == 0:
             self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.env.time_step)
 
+        return c
+
 
     def act(self, state):
-        if self.isTrain is True and self.epsilon > FINAL_EPSILON:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / self.env.data_length
+        # if self.isTrain is True and self.epsilon > FINAL_EPSILON:
+            # self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / self.env.data_length
 
         if self.isTrain is True and random.random() <= self.epsilon:
             return random.randint(0, self.action_dim - 1)
@@ -137,7 +127,6 @@ class DQN_Agent():
 			self.network.state_input:state
 			})[0]
             action = np.argmax(output)
-            self.q_vals.append(np.var(output))
             return action
 
     def perceive(self, state, action, reward, next_state, done):
