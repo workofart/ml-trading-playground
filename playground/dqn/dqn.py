@@ -6,12 +6,12 @@ from matplotlib import pyplot as plt
 from playground.dqn.dqn_agent import DQN_Agent
 from playground.env.trading_env import TradingEnv
 
-EPISODE = 3000 # Episode limitation
-TRAIN_EVERY_STEPS = 12
+EPISODE = 500 # Episode limitation
+TRAIN_EVERY_STEPS = 10
 TEST_EVERY_EP = 50
-BATCH_SIZE = 256 # size of minibatch
-DATA_LENGTH = 800 # How many times steps to use in the data
-
+BATCH_SIZE = 64 # size of minibatch
+DATA_LENGTH = 500 # How many times steps to use in the data
+random.seed(1992)
 def main():
     env = TradingEnv(data_length = DATA_LENGTH)
     agent = DQN_Agent(env)
@@ -39,12 +39,9 @@ def main():
         if agent.isTrain is True and agent.epsilon > agent.final_epsilon:
             agent.epsilon -= (1 - agent.final_epsilon) / (EPISODE/1.5)
         log_histogram(agent.summary_writer, 'reward_dist', avg_reward_list, i)
-        avg_reward_summary = tf.Summary(value=[tf.Summary.Value(tag='avg_reward', simple_value=np.mean(avg_reward_list))])
-        agent.summary_writer.add_summary(avg_reward_summary, i)
-        drawdown_summary = tf.Summary(value=[tf.Summary.Value(tag='drawdown', simple_value=np.sum(np.array(avg_reward_list) < 0, axis=0))])
-        agent.summary_writer.add_summary(drawdown_summary, i)
-        agent.summary_writer.flush()
-
+        log_scalars(agent.summary_writer, 'avg_reward', np.mean(avg_reward_list), i)
+        log_scalars(agent.summary_writer, 'drawdown', np.mean(np.sum(np.array(avg_reward_list) < 0, axis=0))), i)
+        
         # print('# Buys: {} | {}'.format(str(actions_list.count(0)), (actions_list.count(0)/len(actions_list))))
         # print('# Sells: {} | {}'.format(str(actions_list.count(1)), (actions_list.count(1)/len(actions_list))))
         # print('# Holds: {} | {}'.format(str(actions_list.count(2)), (actions_list.count(2)/len(actions_list))))

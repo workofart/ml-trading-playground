@@ -6,7 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize as norm2
 import tensorflow as tf
 
-def read_data(filename, ticker):
+def get_minute_data(data):
+    return data.asfreq('T', method='bfill')
+
+def read_data(filename, ticker, freq='raw'):
     data = pd.read_csv(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', filename)))
     if ticker:
         data = data[data['ticker'] == ticker]
@@ -14,7 +17,11 @@ def read_data(filename, ticker):
     data = data[['high', 'low', 'price', 'volume', 'timestamp']].sort_values(by='timestamp')
     data = data.set_index('timestamp')
 
+    if freq == 'm':
+        data = get_minute_data(data)
+
     data = norm2(data.values, axis=0) # If 1, independently normalize each sample, otherwise (if 0) normalize each feature.
+    
     return data
 
 def normalize(data):
@@ -183,6 +190,11 @@ def log_histogram(writer, tag, values, step, bins=1000):
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, histo=hist)])
         writer.add_summary(summary, step)
         writer.flush()
+
+def log_scalars(writer, tag, values, step):
+    summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=values)])
+    writer.add_summary(summary, step)
+    writer.flush()
 
 def cleanup_logs():
     pattern = 'events.out.tfevents.*'

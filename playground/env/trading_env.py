@@ -1,5 +1,5 @@
 import numpy as np
-from playground.utilities.utils import read_data, cleanup_logs
+from playground.utilities.utils import read_data, cleanup_logs, get_minute_data
 
 # Inspired by https://github.com/openai/gym/blob/master/gym/envs/algorithmic/algorithmic_env.py
 
@@ -27,7 +27,7 @@ class TradingEnv():
         self.data_length = data_length
         self.episode_total_reward = None
         self.action_space = [0, 1, 2]
-        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC')[0:data_length] * 1000
+        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC', 'm')[0:data_length] * 1000
         self.previous_portfolio = self.cash
         self.reset()
 
@@ -101,15 +101,16 @@ class TradingEnv():
             self.buys = 0
             self.sells = 0
 
+        current_val = self.cash + self.portfolio * cur_price
         if error:
-            reward = -1
+            reward = -0.01
         else:
-            reward = (self.cash + self.portfolio * cur_price - self.previous_portfolio) * 100
+            reward = current_val + (current_val - self.previous_portfolio)
 
         # Enhance reward function based on behavior
         # if self.holds > REPEAT_TRADE_THRESHOLD or self.buys > REPEAT_TRADE_THRESHOLD or self.sells > REPEAT_TRADE_THRESHOLD:
         #     reward -= 0.2
 
         # Previous reward should be the previous portfolio market value, not the difference
-        self.previous_portfolio = self.cash + self.portfolio * cur_price
+        self.previous_portfolio = current_val
         return reward

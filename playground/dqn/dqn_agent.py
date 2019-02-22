@@ -7,7 +7,7 @@ from playground.dqn.experience_buffer import Experience_Buffer
 from playground.utilities.utils import variable_summaries
 
 # Hyper Parameters for DQN
-LEARNING_RATE = 3e-5
+LEARNING_RATE = 5e-5
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.05 # ending value of epislon
 DECAY = 0.993 # epsilon decay
