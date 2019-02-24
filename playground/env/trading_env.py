@@ -5,11 +5,8 @@ from playground.utilities.utils import read_data, cleanup_logs, get_minute_data
 
 
 # Trading Params
-INIT_CASH = 100
-# HOLD_PENALTY = 0.001
 HOLD_PENALTY = 0
-TXN_COST = 0.0002
-# TXN_COST = 0
+TXN_COST = 0.002
 REPEAT_TRADE_THRESHOLD = 15
 
 # Reward
@@ -18,10 +15,11 @@ MAX_REWARD = 2
 
 class TradingEnv():
 
-    def __init__(self, data_length):
+    def __init__(self, data_length, INIT_CASH):
         # Trading Params
-        self.portfolio = 0
-        self.cash = INIT_CASH
+        self.portfolio = []
+        self.INIT_CASH = INIT_CASH
+        self.cash = self.INIT_CASH
 
         self.time_step = 0
         self.data_length = data_length
@@ -31,11 +29,6 @@ class TradingEnv():
         self.previous_portfolio = self.cash
         self.reset()
 
-        # Reward Function
-        self.buys = 0
-        self.sells = 0
-        self.holds = 0
-
         # Cleanup
         cleanup_logs()
 
@@ -43,11 +36,10 @@ class TradingEnv():
     def reset(self):
         self.episode_total_reward = 0
         self.time_step = 0
-        self.portfolio = 0
-        self.cash = INIT_CASH
-        self.buys = 0
-        self.sells = 0
-        self.holds = 0
+        self.portfolio = []
+        self.cash = self.INIT_CASH
+        self.error_count = 0
+        self.permitted_trades = []
         return self._get_obs()
 
     def step(self, action, isTrain = False):
@@ -56,7 +48,7 @@ class TradingEnv():
         reward = self.process_action(action, state)
 
         # Clip rewards between MIN_REWARD and MAX_REWARD
-        reward = max(MIN_REWARD, min(MAX_REWARD, reward))
+        # reward = max(MIN_REWARD, min(MAX_REWARD, reward))
 
         if self.time_step >= self.observation_space.shape[0] - 1:
             done = True
@@ -79,38 +71,42 @@ class TradingEnv():
                 error = True
             else:
                 self.cash -= cur_price * (1+TXN_COST)# buy with current price of current state
-                self.portfolio += 1
-                self.buys += 1
-                self.sells = 0
-                self.holds = 0
+                # self.portfolio += 1
+                self.portfolio.append(cur_price)
+                self.permitted_trades.append(0)
         # Sell
         elif action == 1:
-            if self.portfolio <= 0:
+            if self._get_holding_stock_count() == 0:
                 error = True
             else:
                 self.cash += cur_price * (1-TXN_COST)
-                self.portfolio -= 1
-                self.sells += 1
-                self.buys = 0
-                self.holds = 0
+                self.portfolio.append(-cur_price)
+                self.permitted_trades.append(1)
         # Hold
         elif action == 2:
             self.cash = self.cash - HOLD_PENALTY
             self.portfolio = self.portfolio
-            self.holds+= 1
-            self.buys = 0
-            self.sells = 0
+            self.permitted_trades.append(2)
 
-        current_val = self.cash + self.portfolio * cur_price
+        book_val = self.cash + self._avg_holding_price() * self._get_holding_stock_count()
+        market_val = self.cash + cur_price * self._get_holding_stock_count()
+        
+        reward = book_val + (market_val - self.previous_portfolio)
+
         if error:
-            reward = -0.01
-        else:
-            reward = current_val + (current_val - self.previous_portfolio)
-
-        # Enhance reward function based on behavior
-        # if self.holds > REPEAT_TRADE_THRESHOLD or self.buys > REPEAT_TRADE_THRESHOLD or self.sells > REPEAT_TRADE_THRESHOLD:
-        #     reward -= 0.2
+            reward -= 0.03
+            self.error_count += 1
+            self.permitted_trades.append(2)
 
         # Previous reward should be the previous portfolio market value, not the difference
-        self.previous_portfolio = current_val
+        self.previous_portfolio = market_val
         return reward
+
+    def _avg_holding_price(self):
+        if self._get_holding_stock_count() > 0:
+            return np.sum(self.portfolio) / self._get_holding_stock_count()
+        else:
+            return 0
+    
+    def _get_holding_stock_count(self):
+        return np.sum(np.array(self.portfolio) > 0, axis=0) - np.sum(np.array(self.portfolio) < 0, axis=0)

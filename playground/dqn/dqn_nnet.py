@@ -6,7 +6,6 @@ from playground.utilities.utils import variable_summaries
 # NN Parameters
 NN1_NEURONS = 32
 NN2_NEURONS = 16
-# NN3_NEURONS = 8
 beta = 0.01 # regularization
 dropout = 0.03 # dropout
 

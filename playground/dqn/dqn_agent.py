@@ -4,19 +4,20 @@ import random
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
 from playground.dqn.experience_buffer import Experience_Buffer
-from playground.utilities.utils import variable_summaries
+from playground.utilities.utils import variable_summaries, get_latest_run_count
 
 # Hyper Parameters for DQN
-LEARNING_RATE = 5e-5
+LEARNING_RATE = 5e-6
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.05 # ending value of epislon
 DECAY = 0.993 # epsilon decay
-GAMMA = 0.99 # discount factor for q value
+GAMMA = 0.95 # discount factor for q value
 UPDATE_TARGET_NETWORK = 10
+SAVE_NETWORK = 50
 
 class DQN_Agent():
 
-    def __init__(self, env, isTrain = True):
+    def __init__(self, env, isTrain = True, isLoad = False):
         # init some parameters
         self.epsilon = INITIAL_EPSILON
         self.final_epsilon = FINAL_EPSILON
@@ -39,13 +40,13 @@ class DQN_Agent():
         self.session.run(tf.initializers.global_variables())
 
         # Tensorboard
-        self.summary_writer = tf.summary.FileWriter('logs')
+        self.summary_writer = tf.summary.FileWriter('logs/' + str(get_latest_run_count()))
         self.summary_writer.add_graph(self.session.graph)
 
         # loading networks
         self.saver = tf.train.Saver()
         checkpoint = tf.train.get_checkpoint_state("saved_networks")
-        if self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path:
+        if (self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path) or isLoad is True:
                 self.saver.restore(self.session, checkpoint.model_checkpoint_path)
                 print("Successfully loaded:", checkpoint.model_checkpoint_path)
         else:
@@ -110,8 +111,8 @@ class DQN_Agent():
         self.summary_writer.add_summary(summary, ep)
 
         # save network 9 times per episode
-        if self.env.time_step % int(self.env.data_length / 9) == 0:
-            self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.env.time_step)
+        if ep % SAVE_NETWORK == 0:
+            self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = ep)
 
         return c
 

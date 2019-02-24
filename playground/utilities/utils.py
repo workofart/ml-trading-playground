@@ -74,27 +74,41 @@ def evaluate_result(pred, x, y, mode):
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
 
-def plot_trades(EP, prices, actions):
+def plot_trades(EP, prices, actions, permitted_trades):
+    def get_buys_sells(actions):
+        buys, sells = {}, {}
+        buys['x'] = []
+        buys['y'] = []
+        sells['x'] = []
+        sells['y'] = []
+        for i, action in enumerate(actions):
+            if action == 0:
+                buys['x'].append(i)
+                buys['y'].append(prices[i])
+            elif action == 1:
+                sells['x'].append(i)
+                sells['y'].append(prices[i])
+        return buys, sells
     plt.clf()
+    plt.subplot(2,1,1)
     plt.plot(prices, linewidth=1, color='#808080')
-    buys, sells = {}, {}
-    buys['x'] = []
-    buys['y'] = []
-    sells['x'] = []
-    sells['y'] = []
-    for i, action in enumerate(actions):
-        if action == 0:
-            buys['x'].append(i)
-            buys['y'].append(prices[i])
-        elif action == 1:
-            sells['x'].append(i)
-            sells['y'].append(prices[i])
-    plt.plot(buys['x'], buys['y'], '^', markersize=3, color='g')
-    plt.plot(sells['x'], sells['y'], 'v', markersize=3, color='r')
+    buys, sells = get_buys_sells(actions)
+    plt.plot(buys['x'], buys['y'], '.', markersize=2, color='g')
+    plt.plot(sells['x'], sells['y'], '.', markersize=2, color='r')
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
-    plt.savefig(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'snapshots', 'test_trades_EP{}.png'.format(EP))))
-    # plt.show()
+    plt.title('Agent\'s Intended Actions')
+    # Permitted Trades
+    plt.subplot(2,1,2)
+    plt.plot(prices, linewidth=1, color='#808080')
+    p_buys, p_sells = get_buys_sells(permitted_trades)
+    plt.plot(p_buys['x'], p_buys['y'], '.', markersize=2, color='g')
+    plt.plot(p_sells['x'], p_sells['y'], '.', markersize=2, color='r')
+    plt.ylabel('Prices')
+    plt.xlabel('Timesteps')
+    plt.title('Agent\'s Permitted Actions (Actual Trades)')
+
+    plt.savefig(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'snapshots', 'test_trades_EP{}.png'.format(EP))), dpi=400)
 
 def plot_reward(rewards):
     plt.clf()
@@ -202,3 +216,13 @@ def cleanup_logs():
     for f in os.listdir(path):
         if re.search(pattern, f):
             os.remove(os.path.join(path, f))
+
+def get_latest_run_count():
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))
+    dirs = [name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))]
+    if len(dirs) == 0:
+        return 0
+    else:
+        return int(max(dirs)) + 1
+
+            

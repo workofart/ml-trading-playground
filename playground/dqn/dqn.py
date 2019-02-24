@@ -1,4 +1,4 @@
-from playground.utilities.utils import read_data, generate_datasets, plot_trades, plot_data, log_histogram
+from playground.utilities.utils import read_data, generate_datasets, plot_trades, log_histogram, log_scalars
 import numpy as np, pandas as pd, random
 import tensorflow as tf
 from tqdm import tqdm
@@ -6,15 +6,18 @@ from matplotlib import pyplot as plt
 from playground.dqn.dqn_agent import DQN_Agent
 from playground.env.trading_env import TradingEnv
 
-EPISODE = 500 # Episode limitation
-TRAIN_EVERY_STEPS = 10
+EPISODE = 3000 # Episode limitation
+TRAIN_EVERY_STEPS = 16
 TEST_EVERY_EP = 50
-BATCH_SIZE = 64 # size of minibatch
-DATA_LENGTH = 500 # How many times steps to use in the data
+BATCH_SIZE = 128 # size of minibatch
+DATA_LENGTH = 800 # How many times steps to use in the data
+
+INIT_CASH = 100
 random.seed(1992)
-def main():
-    env = TradingEnv(data_length = DATA_LENGTH)
-    agent = DQN_Agent(env)
+
+def main(isLoad):
+    env = TradingEnv(data_length=DATA_LENGTH, INIT_CASH=INIT_CASH)
+    agent = DQN_Agent(env, isLoad=isLoad)
     # plt.ion()
     # plt.show()
     for i in tqdm(range(EPISODE)):
@@ -34,13 +37,14 @@ def main():
                 next_state = agent.env._get_obs() # Get the next state
                 agent.perceive(state, action, reward, next_state, done)
                 if agent.replay_buffer.size() > BATCH_SIZE and env.time_step % TRAIN_EVERY_STEPS == 0:
-                    c = agent.train_dqn_network(i, BATCH_SIZE)
+                    agent.train_dqn_network(i, batch_size=BATCH_SIZE)
         # Update epsilon after every episode
         if agent.isTrain is True and agent.epsilon > agent.final_epsilon:
-            agent.epsilon -= (1 - agent.final_epsilon) / (EPISODE/1.5)
+            agent.epsilon -= (1 - agent.final_epsilon) / (EPISODE/1.2)
         log_histogram(agent.summary_writer, 'reward_dist', avg_reward_list, i)
         log_scalars(agent.summary_writer, 'avg_reward', np.mean(avg_reward_list), i)
-        log_scalars(agent.summary_writer, 'drawdown', np.mean(np.sum(np.array(avg_reward_list) < 0, axis=0))), i)
+        log_scalars(agent.summary_writer, 'drawdown', np.mean(np.sum(np.array(avg_reward_list) < INIT_CASH, axis=0)), i)
+        log_scalars(agent.summary_writer, 'action_errors', np.mean(agent.env.error_count), i)
         
         # print('# Buys: {} | {}'.format(str(actions_list.count(0)), (actions_list.count(0)/len(actions_list))))
         # print('# Sells: {} | {}'.format(str(actions_list.count(1)), (actions_list.count(1)/len(actions_list))))
@@ -59,9 +63,9 @@ def test(agent, ep = 0):
         action = agent.act(state)
         actions.append(action)
         state, reward, done, _ = agent.env.step(action)
-    plot_trades(ep, prices, actions)
+    plot_trades(ep, prices, actions, agent.env.permitted_trades)
 
 
 
 if __name__ == '__main__':
-    main()
+    main(True)

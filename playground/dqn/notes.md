@@ -47,3 +47,19 @@ for pow in range(1,5):   # plot x^1, x^2, ..., x^4
 > 2. Increasing batch size. You already mentioned this yourself, but I'll also explain why it can help. A major issue in your problem is that you described the environment to be highly stochastic. This means you get a large amount of **variance** in your observed returns, and therefore also in your updates. If the true differences in Q∗-values are very small, these differences will get dominated and become completely invisible due to high variance in observations. You can smooth out this variance by increasing the batch size.
 > 3. Decreasing learning rate. You also mentioned this in the question, and that it didn't really help. I suppose a high learning rate early on can help to learn more quickly, but decreasing it later on can help to take more "careful", small update steps that don't take "jumps" of a magnitude greater than the true difference in Q∗-values.
 > 4. Distributional Reinforcement Learning: algorithms like Q-learning, DQN, Double DQN, etc., they all learn what we can call values, or scalars, or point estimates. Given a state-action pair (s,a), such a Q-value represents the expected returns obtained by executing a in s and continuing with a greedy policy afterwards. In stochastic environments, it is possible that the **true expected value Q∗(s,a) never coincides with any conrete observation at the end of an actual trajectory**. For example, suppose that in some state s, an action a has a probability of 0.5 of giving a reward of 1 and instantly terminating afterwards, but also has a probability of 0.5 of giving a reward of 0 and instantly terminating. Then, we have Q∗(s,a)=0.5, but we **never** actually observe a return of 0.5; we always observe returns of either 0 or 1. When comparing the output of the learned Q-function (which should hopefully be around 0.5 in such a situation) to any observed trajectories, we'll almost always have a non-zero error and take update steps that keep bouncing around the optimal solution, rather than converging to the optimal solution. Since you mentioned that you see Q-values fluctuating around, you may have observed this. **Excessive fluctuations around Q-value estimates will likely make it difficult to get a consistent, stable ranking when the optimal Q-values that you are fluctuating around are themselves very close to each other**. There is a class of algorithms (extensions of DQN mostly) referred to as **distributional RL**, which aim to address this issue by learning a full **distribution** of returns we expect to be capable of observing, rather than the single-point estimates that Q-values essentially are. I believe the first major paper on this topic was the following: https://arxiv.org/abs/1707.06887. There have been multiple follow-up papers too, the most recent of which I believe (but may be wrong here) to be this one: https://arxiv.org/abs/1806.06923. In general, I do know Marc Bellemare and Rémi Munos at least have done quite some work on that, so you could search for those names too.
+
+#### Difference between Target Network approach and Double DQN approach
+[Reference](https://datascience.stackexchange.com/questions/32246/q-learning-target-network-vs-double-dqn)
+
+Target Network Approach
+> 1. Select an item from Memory Bank
+> 2. Using Target Network, from St+1 determine the index of the best action At+1 and its Q-value
+> 3. Do corrections as usual
+
+Double DQN Approach
+> 1. Select an item from Memory Bank
+> 2. Using Online Network, from St+1 determine the index of the best action At+1.
+> 3. Using Target Network, from St+1 get the Q-value of that action.
+> 4. Do corrections as usual using that Q-value
+
+Were we to let Target Network select a best action, it could have very well selected some other index.

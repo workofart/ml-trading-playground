@@ -109,3 +109,4 @@ venv.bak/
 saved_networks/
 logs/
 playground/snapshots/*.png
+playground/snapshots/archive
