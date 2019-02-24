@@ -8,14 +8,18 @@ from playground.env.trading_env import TradingEnv
 
 EPISODE = 3000 # Episode limitation
 TRAIN_EVERY_STEPS = 16
-TEST_EVERY_EP = 50
-BATCH_SIZE = 128 # size of minibatch
-DATA_LENGTH = 800 # How many times steps to use in the data
+TEST_EVERY_EP = 100
+BATCH_SIZE = 32 # size of minibatch
+DATA_LENGTH = 250 # How many times steps to use in the data
 
 INIT_CASH = 100
-random.seed(1992)
 
-def main(isLoad):
+# reproducible
+random.seed(1992)
+np.random.seed(1992)
+tf.set_random_seed(1992)
+
+def main(isLoad=False):
     env = TradingEnv(data_length=DATA_LENGTH, INIT_CASH=INIT_CASH)
     agent = DQN_Agent(env, isLoad=isLoad)
     # plt.ion()
@@ -68,4 +72,4 @@ def test(agent, ep = 0):
 
 
 if __name__ == '__main__':
-    main(True)
+    main()
