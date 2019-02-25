@@ -107,6 +107,7 @@ venv.bak/
 
 # Project Specific
 ./saved_networks/
-logs/
+dqn_logs/
+events.out.tfevents.*
 playground/snapshots/*.png
 playground/snapshots/archive
