@@ -107,8 +107,11 @@ def plot_trades(EP, prices, actions, permitted_trades):
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
     plt.title('Agent\'s Permitted Actions (Actual Trades)')
-
-    plt.savefig(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'snapshots', 'test_trades_EP{}.png'.format(EP))), dpi=400)
+    
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs', str(get_latest_run_count() - 1), 'test_trades'))
+    if os.path.isdir(path) is False:
+        os.mkdir(path)
+    plt.savefig(path + '/EP{}.png'.format(EP), dpi=400)
 
 def plot_reward(rewards):
     plt.clf()
@@ -224,5 +227,3 @@ def get_latest_run_count():
         return 0
     else:
         return int(max(dirs)) + 1
-
-            
