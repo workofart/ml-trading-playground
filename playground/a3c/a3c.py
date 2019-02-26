@@ -39,6 +39,9 @@ GLOBAL_EP = 0
 DATA_LENGTH = 300
 INIT_CASH = 100
 
+NN1_NEURONS = 4 * DATA_LENGTH
+NN2_NEURONS = 2 * DATA_LENGTH
+
 # only to get the following stats and testing
 # each worker creates its own env
 dummy_env = TradingEnv(DATA_LENGTH, INIT_CASH)
@@ -88,11 +91,13 @@ class ActorCriticNet(object):
     def _build_net(self, scope):
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('actor'):
-            l_a = tf.layers.dense(self.state, 200, tf.nn.relu6, kernel_initializer=w_init, name='layer_actor')
-            a_prob = tf.layers.dense(l_a, N_A, tf.nn.softmax, kernel_initializer=w_init, name='action_prob')
+            l_a1 = tf.layers.dense(self.state, NN1_NEURONS, tf.nn.relu, kernel_initializer=w_init, name='layer_actor1')
+            l_a2 = tf.layers.dense(l_a1, NN2_NEURONS, tf.nn.relu, kernel_initializer=w_init, name='layer_actor2')
+            a_prob = tf.layers.dense(l_a2, N_A, tf.nn.softmax, kernel_initializer=w_init, name='action_prob')
         with tf.variable_scope('critic'):
-            l_c = tf.layers.dense(self.state, 100, tf.nn.relu6, kernel_initializer=w_init, name='layer_critic')
-            v = tf.layers.dense(l_c, 1, kernel_initializer=w_init, name='v')  # state value
+            l_c1 = tf.layers.dense(self.state, NN1_NEURONS, tf.nn.relu, kernel_initializer=w_init, name='layer_critic1')
+            l_c2 = tf.layers.dense(l_c1, NN2_NEURONS, tf.nn.relu, kernel_initializer=w_init, name='layer_critic2')
+            v = tf.layers.dense(l_c2, 1, kernel_initializer=w_init, name='v')  # state value
         a_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/actor')
         c_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/critic')
         return a_prob, v, a_params, c_params
@@ -173,7 +178,7 @@ class Worker(object):
             
             # save network frequently
             if GLOBAL_EP % SAVE_NETWORK == 0 and GLOBAL_EP > 0:
-                saver.save(self.session, 'logs/' + str(get_latest_run_count()-1) + '/saved_networks/' + 'network' + '-ac', global_step = GLOBAL_EP)
+                saver.save(self.session, 'logs/' + str(get_latest_run_count()-1) + '/saved_networks/' + 'network' + '-a3c', global_step = GLOBAL_EP)
 
 if __name__ == "__main__":
     import argparse
