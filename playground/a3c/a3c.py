@@ -39,9 +39,9 @@ GLOBAL_EP = 0
 DATA_LENGTH = 300
 INIT_CASH = 100
 
-env = TradingEnv(DATA_LENGTH, INIT_CASH)
-N_S = env.observation_space.shape[1]
-N_A = len(env.action_space)
+dummy_env = TradingEnv(DATA_LENGTH, INIT_CASH) # only to get the following stats, each worker creates its own env
+N_S = dummy_env.observation_space.shape[1]
+N_A = len(dummy_env.action_space)
 
 
 class ActorCriticNet(object):
@@ -174,9 +174,13 @@ class Worker(object):
                 saver.save(self.session, 'logs/' + str(get_latest_run_count()-1) + '/saved_networks/' + 'network' + '-ac', global_step = GLOBAL_EP)
 
 if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', '--device', required=True, help='either "CPU" or "GPU" for training')
+    args = vars(ap.parse_args())
     SESS = tf.Session()
 
-    with tf.device("/cpu:0"):
+    with tf.device("/{}:0".format(args['device'])):
         OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
         OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
         GLOBAL_ACTORCRITIC = ActorCriticNet(GLOBAL_NET_SCOPE)  # we only need its params
@@ -210,8 +214,3 @@ if __name__ == "__main__":
         t.start()
         worker_threads.append(t)
     COORD.join(worker_threads)
-
-    # plt.plot(np.arange(len(GLOBAL_RUNNING_R)), GLOBAL_RUNNING_R)
-    # plt.xlabel('step')
-    # plt.ylabel('Total moving reward')
-    # plt.show()
