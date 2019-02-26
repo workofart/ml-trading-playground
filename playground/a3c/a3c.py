@@ -39,7 +39,9 @@ GLOBAL_EP = 0
 DATA_LENGTH = 300
 INIT_CASH = 100
 
-dummy_env = TradingEnv(DATA_LENGTH, INIT_CASH) # only to get the following stats, each worker creates its own env
+# only to get the following stats and testing
+# each worker creates its own env
+dummy_env = TradingEnv(DATA_LENGTH, INIT_CASH)
 N_S = dummy_env.observation_space.shape[1]
 N_A = len(dummy_env.action_space)
 
@@ -167,7 +169,7 @@ class Worker(object):
             # the workers are working asynchronously, so the trades
             # might not make sense
             if GLOBAL_EP % TEST_EVERY_EP == 0 and GLOBAL_EP > 0:
-                test(env, self.AC, GLOBAL_EP)
+                test(dummy_env, self.AC, GLOBAL_EP)
             
             # save network frequently
             if GLOBAL_EP % SAVE_NETWORK == 0 and GLOBAL_EP > 0:
