@@ -25,12 +25,12 @@ def test(env, actor, ep = 0):
 
 # hyperparameters
 OUTPUT_GRAPH = False
-EPISODE = 9000
+EPISODE = 3000
 TEST_EVERY_EP = 100
 DISPLAY_REWARD_THRESHOLD = 200  # renders environment if total episode reward is greater then this threshold
 DATA_LENGTH = 300   # maximum time step in one episode
 LR_A = 1e-6    # learning rate for actor
-LR_C = 5e-6     # learning rate for critic
+LR_C = 5e-6     # learning rate for critic (should learn faster)
 
 # trading params
 INIT_CASH = 100
@@ -89,6 +89,7 @@ for i in tqdm(range(EPISODE)):
             #     running_reward = running_reward * 0.95 + ep_rs_sum * 0.05
             # if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True  # rendering
             # print("episode:", i, "  reward:", int(running_reward))
+    log_scalars(summary_writer, 'profit', _['marketValue'] - INIT_CASH, i)
     log_histogram(summary_writer, 'reward_dist', reward_list, i)
     log_scalars(summary_writer, 'avg_reward', np.mean(reward_list), i)
     log_scalars(summary_writer, 'drawdown', np.mean(np.sum(np.array(reward_list) < INIT_CASH, axis=0)), i)
@@ -97,7 +98,7 @@ for i in tqdm(range(EPISODE)):
     if i % TEST_EVERY_EP == 0 and i > 0:
         test(env, actor, i)
     
-    # save network 9 times per episode
+    # save network frequently
     if i % SAVE_NETWORK == 0 and i > 0:
         saver.save(sess, 'logs/' + str(get_latest_run_count()-1) + '/saved_networks/' + 'network' + '-ac', global_step = i)
 

@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
 
+NN1_NEURONS = 32
+NN2_NEURONS = 16
+
 class Actor:
 
     def __init__(self, sess, n_features, n_actions, lr=0.001):
@@ -13,15 +16,24 @@ class Actor:
         with tf.variable_scope('Actor'):
             l1 = tf.layers.dense(
                 inputs=self.s,
-                units=20,    # number of hidden units
+                units=NN1_NEURONS,    # number of hidden units
                 activation=tf.nn.relu,
                 kernel_initializer=tf.random_normal_initializer(0., .1),    # weights
                 bias_initializer=tf.constant_initializer(0.1),  # biases
                 name='l1'
             )
 
-            self.acts_prob = tf.layers.dense(
+            l2 = tf.layers.dense(
                 inputs=l1,
+                units=NN2_NEURONS,    # number of hidden units
+                activation=tf.nn.relu,
+                kernel_initializer=tf.random_normal_initializer(0., .1),    # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name='l2'
+            )
+
+            self.acts_prob = tf.layers.dense(
+                inputs=l2,
                 units=n_actions,    # output units
                 activation=tf.nn.softmax,   # get action probabilities
                 kernel_initializer=tf.random_normal_initializer(0., .1),  # weights

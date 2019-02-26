@@ -1,12 +1,12 @@
 import numpy as np
-from playground.utilities.utils import read_data, cleanup_logs, get_minute_data
+from playground.utilities.utils import read_data, cleanup_logs, get_minute_data, log_scalars
 
 # Inspired by https://github.com/openai/gym/blob/master/gym/envs/algorithmic/algorithmic_env.py
 
 
 # Trading Params
 HOLD_PENALTY = 0
-TXN_COST = 0.002
+TXN_COST = 0.0005
 REPEAT_TRADE_THRESHOLD = 15
 
 # Reward
@@ -45,16 +45,17 @@ class TradingEnv():
     def step(self, action, isTrain = False):
         done = False
         state = self._get_obs()
-        reward = self.process_action(action, state)
+        reward, mv = self.process_action(action, state)
 
         # Clip rewards between MIN_REWARD and MAX_REWARD
         # reward = max(MIN_REWARD, min(MAX_REWARD, reward))
 
         if self.time_step >= self.observation_space.shape[0] - 1:
             done = True
+            
         self.episode_total_reward += reward
         self.time_step += 1
-        return state, reward, done, {}
+        return state, reward, done, {'marketValue': mv}
 
     def _get_obs(self, pos=None):
         if pos is None:
@@ -100,7 +101,7 @@ class TradingEnv():
 
         # Previous reward should be the previous portfolio market value, not the difference
         self.previous_portfolio = market_val
-        return reward
+        return reward, market_val
 
     def _avg_holding_price(self):
         if self._get_holding_stock_count() > 0:
