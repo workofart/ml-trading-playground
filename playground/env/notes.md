@@ -1,0 +1,1 @@
+Could potentially build in the portfolio and cash holdings into the states so that the agent can learn not to break the rules of buying without cash and selling without portfolio holdings. 
