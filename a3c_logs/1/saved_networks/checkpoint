@@ -1,0 +1,2 @@
+model_checkpoint_path: "network-a3c-100"
+all_model_checkpoint_paths: "network-a3c-100"

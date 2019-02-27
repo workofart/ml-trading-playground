@@ -24,7 +24,7 @@ def test(env, actor, ep = 0):
     plot_trades(ep, prices, actions, env.permitted_trades)
 
 N_WORKERS = multiprocessing.cpu_count()
-MAX_GLOBAL_EP = 1000
+MAX_GLOBAL_EP = 3000
 TEST_EVERY_EP = 100
 SAVE_NETWORK = 100
 GLOBAL_NET_SCOPE = 'Global_Net'
@@ -36,11 +36,11 @@ LR_C = 1e-5    # learning rate for critic
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
 
-DATA_LENGTH = 300
+DATA_LENGTH = 600
 INIT_CASH = 100
 
-NN1_NEURONS = 4 * DATA_LENGTH
-NN2_NEURONS = 2 * DATA_LENGTH
+NN1_NEURONS = min(4 * DATA_LENGTH, 256)
+NN2_NEURONS = min(2 * DATA_LENGTH, 128)
 
 # only to get the following stats and testing
 # each worker creates its own env
@@ -168,7 +168,7 @@ class Worker(object):
             log_scalars(summary_writer, 'profit', info['marketValue'] - INIT_CASH, GLOBAL_EP)
             log_scalars(summary_writer, 'avg_reward', np.mean(reward_list), GLOBAL_EP)
             log_histogram(summary_writer, 'reward_dist', reward_list, GLOBAL_EP)
-            log_scalars(summary_writer, 'drawdown', np.mean(np.sum(np.array(reward_list) < INIT_CASH, axis=0)), i)
+            log_scalars(summary_writer, 'drawdown', np.mean(np.sum(np.array(reward_list) < INIT_CASH, axis=0)), GLOBAL_EP)
 
             # TODO: Might not be able to naively create test trades, because
             # the workers are working asynchronously, so the trades
@@ -209,12 +209,12 @@ if __name__ == "__main__":
 
     worker_threads = []
     for worker in workers:
-        checkpoint = tf.train.get_checkpoint_state('logs/' + str(get_latest_run_count()-2) + '/saved_networks_' + worker.name)
-        if checkpoint and checkpoint.model_checkpoint_path:
-            saver.restore(SESS, checkpoint.model_checkpoint_path)
-            print("Successfully loaded:", checkpoint.model_checkpoint_path)
-        else:
-            print("Could not find old network weights")
+        # checkpoint = tf.train.get_checkpoint_state('logs/' + str(get_latest_run_count()-2) + '/saved_networks_' + worker.name)
+        # if checkpoint and checkpoint.model_checkpoint_path:
+        #     saver.restore(SESS, checkpoint.model_checkpoint_path)
+        #     print("Successfully loaded:", checkpoint.model_checkpoint_path)
+        # else:
+        #     print("Could not find old network weights")
 
         job = lambda: worker.work()
         t = threading.Thread(target=job)

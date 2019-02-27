@@ -1,0 +1,1 @@
+add the episode number on each test trade graph so the animation will be more descriptive later
