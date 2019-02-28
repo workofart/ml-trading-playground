@@ -4,11 +4,13 @@ import scipy.signal
 
 from playground.a3c_new.ac_network import AC_Network
 from playground.utilities.utils import update_target_graph
+from playground.dqn.experience_buffer import Experience_Buffer
 
 # Discounting function used to calculate discounted returns.
 def discount(x, gamma):
     return scipy.signal.lfilter([1], [1, -gamma], x[::-1], axis=0)[::-1]
 
+EXPERIENCE_BUFFER_SIZE = 100
 
 class Worker():
     def __init__(self,env,name,s_size,a_size,trainer,model_path,global_episodes):
@@ -30,14 +32,14 @@ class Worker():
         # TODO: setup the env
 
 
-        self.actions = self.actions = np.identity(a_size,dtype=bool).tolist()
+        self.actions = np.identity(a_size,dtype=bool).tolist()
         
         self.env = env
         
     # Assumes the rollout follows this format
     # [state, actions, rewards, next_state, values]
     def train(self,rollout,sess,gamma,bootstrap_value):
-        rollout = np.array(rollout)
+        rollout = np.array(rollout.buffer)
         states = rollout[:,0]
         actions = rollout[:,1]
         rewards = rollout[:,2]
@@ -59,7 +61,7 @@ class Worker():
             self.local_AC.state:np.vstack(states),
             self.local_AC.actions:actions,
             self.local_AC.advantages:advantages}
-        v_l,p_l,e_l,g_n,v_n, self.batch_rnn_state,_ = sess.run([self.local_AC.value_loss,
+        v_l,p_l,e_l,g_n,v_n,_ = sess.run([self.local_AC.value_loss,
             self.local_AC.policy_loss,
             self.local_AC.entropy,
             self.local_AC.grad_norms,
@@ -76,29 +78,27 @@ class Worker():
         with sess.as_default(), sess.graph.as_default():                 
             while not coord.should_stop():
                 sess.run(self.update_local_ops)
-                episode_buffer = []
+                experience_buffer = Experience_Buffer(EXPERIENCE_BUFFER_SIZE)
                 episode_values = []
                 episode_reward = 0
                 episode_step_count = 0
                 d = False
                 
-                self.env.new_episode()
-                s = self.env.get_state().screen_buffer
-                while self.env.is_episode_finished() == False:
+                s = self.env.reset()
+                while d == False:
                     #Take an action using probabilities from policy network output.
                     a_dist,v = sess.run([self.local_AC.policy,self.local_AC.value], 
-                        feed_dict={self.local_AC.state:[s]})
+                        feed_dict={self.local_AC.state:s})
                     a = np.random.choice(a_dist[0],p=a_dist[0])
                     a = np.argmax(a_dist == a)
 
-                    r = self.env.make_action(self.actions[a]) / 100.0
-                    d = self.env.is_episode_finished()
+                    s, r, d, _ = self.env.step(self.actions[a])
                     if d == False:
-                        s1 = self.env.get_state().screen_buffer
+                        s1 = self.env._get_obs()
                     else:
                         s1 = s
                         
-                    episode_buffer.append([s,a,r,s1,d,v[0,0]])
+                    experience_buffer.add([s,a,r,s1,d,v[0,0]])
                     episode_values.append(v[0,0])
 
                     episode_reward += r
@@ -108,15 +108,13 @@ class Worker():
                     
                     # If the episode hasn't ended, but the experience buffer is full, then we
                     # make an update step using that experience rollout.
-                    if len(episode_buffer) == 30 and d != True and episode_step_count != max_episode_length - 1:
+                    if experience_buffer.size() == EXPERIENCE_BUFFER_SIZE and d != True and episode_step_count != max_episode_length - 1:
                         # Since we don't know what the true final return is, we "bootstrap" from our current
                         # value estimation.
                         v1 = sess.run(self.local_AC.value, 
-                            feed_dict={self.local_AC.inputs:[s],
-                            self.local_AC.state_in[0]:rnn_state[0],
-                            self.local_AC.state_in[1]:rnn_state[1]})[0,0]
-                        v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,gamma,v1)
-                        episode_buffer = []
+                            feed_dict={self.local_AC.state:s})[0,0]
+                        v_l,p_l,e_l,g_n,v_n = self.train(experience_buffer,sess,gamma,v1)
+                        experience_buffer.clear()
                         sess.run(self.update_local_ops)
                     if d == True:
                         break
@@ -126,8 +124,8 @@ class Worker():
                 self.episode_mean_values.append(np.mean(episode_values))
                 
                 # Update the network using the episode buffer at the end of the episode.
-                if len(episode_buffer) != 0:
-                    v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,gamma,0.0)
+                if experience_buffer.size() != 0:
+                    v_l,p_l,e_l,g_n,v_n = self.train(experience_buffer,sess,gamma,0.0)
                                 
                     
                 # Periodically save gifs of episodes, model parameters, and summary statistics.

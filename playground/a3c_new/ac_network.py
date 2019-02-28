@@ -10,8 +10,8 @@ def normalized_columns_initializer(std=1.0):
     return _initializer
 
 DATA_LENGTH = 300
-NN1_NEURONS = min(4 * DATA_LENGTH, 512)
-NN2_NEURONS = min(2 * DATA_LENGTH, 256)
+NN1_NEURONS = min(4 * DATA_LENGTH, 256)
+NN2_NEURONS = min(2 * DATA_LENGTH, 128)
 
 
 class AC_Network():

@@ -26,7 +26,7 @@ if not os.path.exists(model_path):
 # if not os.path.exists('./frames'):
 #     os.makedirs('./frames')
 
-with tf.device("/gpu:0"): 
+with tf.device("/cpu:0"): 
     global_episodes = tf.Variable(0,dtype=tf.int32,name='global_episodes',trainable=False)
     trainer = tf.train.AdamOptimizer(learning_rate=1e-4)
     master_network = AC_Network(s_size,a_size,'global',None) # Generate global network
