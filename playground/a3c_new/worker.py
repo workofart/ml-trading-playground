@@ -40,20 +40,20 @@ class Worker():
     # [state, actions, rewards, next_state, values]
     def train(self,rollout,sess,gamma,bootstrap_value):
         rollout = np.array(rollout.buffer)
-        states = rollout[:,0]
-        actions = rollout[:,1]
-        rewards = rollout[:,2]
-        next_states = rollout[:,3]
-        values = rollout[:,5]
+        states = [i.astype(np.float32) for i in rollout[:,0]]
+        actions = rollout[:,1].astype(np.int32)
+        rewards = rollout[:,2].astype(np.float32)
+        next_states = [i.astype(np.float32) for i in rollout[:,3]]
+        values = rollout[:,5].astype(np.float32)
         
         # Here we take the rewards and values from the rollout, and use them to 
         # generate the advantage and discounted returns. 
         # The advantage function uses "Generalized Advantage Estimation"
         self.rewards_plus = np.asarray(rewards.tolist() + [bootstrap_value])
-        discounted_rewards = discount(self.rewards_plus,gamma)[:-1]
+        discounted_rewards = discount(self.rewards_plus,gamma)[:-1].astype(np.float32)
         self.value_plus = np.asarray(values.tolist() + [bootstrap_value])
         advantages = rewards + gamma * self.value_plus[1:] - self.value_plus[:-1]
-        advantages = discount(advantages,gamma)
+        advantages = discount(advantages,gamma).astype(np.float32)
 
         # Update the global network using gradients from loss
         # Generate network statistics to periodically save
@@ -61,14 +61,17 @@ class Worker():
             self.local_AC.state:np.vstack(states),
             self.local_AC.actions:actions,
             self.local_AC.advantages:advantages}
-        v_l,p_l,e_l,g_n,v_n,_ = sess.run([self.local_AC.value_loss,
+        v_l,p_l,e_l,g_n,v_n,_, gradients= sess.run([self.local_AC.value_loss,
             self.local_AC.policy_loss,
             self.local_AC.entropy,
             self.local_AC.grad_norms,
             self.local_AC.var_norms,
             # self.local_AC.state_out,
-            self.local_AC.apply_grads],
+            self.local_AC.apply_grads,
+            self.local_AC.gradients],
             feed_dict=feed_dict)
+        print(min([i.min() for i in gradients]))
+        print(max([i.max() for i in gradients]))
         return v_l / len(rollout),p_l / len(rollout),e_l / len(rollout), g_n,v_n
         
     def work(self,max_episode_length,gamma,sess,coord,saver):
@@ -98,7 +101,7 @@ class Worker():
                     else:
                         s1 = s
                         
-                    experience_buffer.add([s,a,r,s1,d,v[0,0]])
+                    experience_buffer.add([s[0],a,r,s1[0],d,v[0,0]])
                     episode_values.append(v[0,0])
 
                     episode_reward += r

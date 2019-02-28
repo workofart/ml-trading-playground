@@ -49,10 +49,12 @@ class AC_Network():
             self.policy = tf.layers.dense(l2,action_N,
                 activation=tf.nn.softmax,
                 kernel_initializer=normalized_columns_initializer(0.01),
+                # kernel_initializer=w_init,
                 bias_initializer=None)
             self.value = tf.layers.dense(l2,1,
                 activation=None,
                 kernel_initializer=normalized_columns_initializer(1.0),
+                # kernel_initializer=w_init,
                 bias_initializer=None)
             
             #Only the worker network need ops for loss functions and gradient updating.
@@ -74,7 +76,7 @@ class AC_Network():
                 local_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
                 self.gradients = tf.gradients(self.loss,local_vars)
                 self.var_norms = tf.global_norm(local_vars)
-                grads,self.grad_norms = tf.clip_by_global_norm(self.gradients,40.0)
+                grads,self.grad_norms = tf.clip_by_global_norm(self.gradients,0.5)
                 
                 #Apply local gradients to global network
                 global_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'global')

@@ -60,9 +60,9 @@ class TradingEnv():
 
     def _get_obs(self, pos=None):
         if pos is None:
-            return np.reshape(self.observation_space[self.time_step], (1, 4))
+            return np.vstack(self.observation_space[self.time_step]).T            
         else:
-            return np.reshape(self.observation_space[pos], (1, 4))
+            return np.vstack(self.observation_space[pos]).T
 
     def process_action(self, action, state):
         cur_price = state[0][2]
