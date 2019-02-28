@@ -24,7 +24,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument('-d', '--device', required=True, help='either "CPU" or "GPU" for training')
     args = vars(ap.parse_args())
-    SESS = tf.Session()
+    SESS = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
 
     with tf.device("/{}:0".format(args['device'])):
         

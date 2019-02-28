@@ -227,3 +227,17 @@ def get_latest_run_count():
         return 0
     else:
         return int(max(dirs)) + 1
+
+def update_target_graph(from_scope, to_scope):
+    # Get the parameters of our DQNNetwork
+    from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, from_scope)
+    
+    # Get the parameters of our Target_network
+    to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, to_scope)
+
+    op_holder = []
+    
+    # Update our target_q_network parameters with q_network parameters
+    for from_var,to_var in zip(from_vars,to_vars):
+        op_holder.append(to_var.assign(from_var))
+    return op_holder

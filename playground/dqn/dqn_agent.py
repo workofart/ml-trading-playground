@@ -4,7 +4,7 @@ import random
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
 from playground.dqn.experience_buffer import Experience_Buffer
-from playground.utilities.utils import variable_summaries, get_latest_run_count
+from playground.utilities.utils import variable_summaries, get_latest_run_count, update_target_graph
 
 # Hyper Parameters for DQN
 LEARNING_RATE = 5e-6
@@ -55,17 +55,7 @@ class DQN_Agent():
         
     def update_target_q_net_if_needed(self, step):
         if step % self.update_target_net_freq == 0 and step > 0 and self.is_updated_target_net is False:
-            # Get the parameters of our DQNNetwork
-            from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "q_network")
-            
-            # Get the parameters of our Target_network
-            to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "target_q_network")
-
-            op_holder = []
-            
-            # Update our target_q_network parameters with q_network parameters
-            for from_var,to_var in zip(from_vars,to_vars):
-                op_holder.append(to_var.assign(from_var))
+            op_holder = update_target_graph("q_network", "target_q_network")
             self.session.run(op_holder)
 
             self.is_updated_target_net = True

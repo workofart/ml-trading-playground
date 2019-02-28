@@ -1,13 +1,14 @@
 import tensorflow as tf
 import numpy as np
 from playground.env.trading_env import TradingEnv
+from playground.utilities.utils import variable_summaries
 
 GLOBAL_NET_SCOPE = 'Global_Net'
 ENTROPY_BETA = 0.001
 DATA_LENGTH = 600
 INIT_CASH = 100
-NN1_NEURONS = min(4 * DATA_LENGTH, 256)
-NN2_NEURONS = min(2 * DATA_LENGTH, 128)
+NN1_NEURONS = min(4 * DATA_LENGTH, 512)
+NN2_NEURONS = min(2 * DATA_LENGTH, 256)
 
 
 # only to get the following stats and testing
@@ -16,8 +17,8 @@ dummy_env = TradingEnv(DATA_LENGTH, INIT_CASH)
 N_S = dummy_env.observation_space.shape[1]
 N_A = len(dummy_env.action_space)
 
-LR_A = 1e-6    # learning rate for actor
-LR_C = 1e-5    # learning rate for critic
+LR_A = 1e-8    # learning rate for actor
+LR_C = 3e-8    # learning rate for critic
 
 class ActorCriticNet(object):
     def __init__(self, scope, sess, globalActorCritic=None):
@@ -36,24 +37,59 @@ class ActorCriticNet(object):
                 self.a_his = tf.placeholder(tf.int32, [None, ], 'Action')
                 self.v_target = tf.placeholder(tf.float32, [None, 1], 'Vtarget')
 
+                # self.action_prob = self.policy
                 self.action_prob, self.v, self.a_params, self.c_params = self._build_net(scope)
-
+                # self.action_prob_summary = variable_summaries(self.action_prob)
+                # self.v_summary = variable_summaries(self.v)
+                # self.a_params_summary = variable_summaries(self.a_params)
+                # self.c_params_summary = variable_summaries(self.c_params)
+                
+                # Advantage
                 td = tf.subtract(self.v_target, self.v, name='TD_error')
+                # self.td_summary = variable_summaries(td)
+
+                # self.merged_summary = tf.summary.merge(
+                #     self.action_prob_summary +
+                #     self.v_summary +
+                #     # self.a_params_summary +
+                #     # self.c_params_summary +
+                #     self.td_summary
+                #     )
+
                 with tf.name_scope('c_loss'):
+                    # Critic's Value loss
                     self.c_loss = tf.reduce_mean(tf.square(td))
+                    # self.c_loss_summary = variable_summaries(self.c_loss)
+                    # self.merged_summary = tf.summary.merge(
+                    #     self.c_loss_summary
+                    # )
 
                 with tf.name_scope('a_loss'):
-                    log_prob = tf.reduce_sum(tf.log(self.action_prob + 1e-5) * tf.one_hot(self.a_his, N_A, dtype=tf.float32), axis=1, keep_dims=True)
-                    exp_v = log_prob * tf.stop_gradient(td)
-                    entropy = -tf.reduce_sum(self.action_prob * tf.log(self.action_prob + 1e-5),
+                    # tf.log(self.responsible_outputs)
+                    log_prob = tf.log(tf.reduce_sum(tf.log(self.action_prob) * tf.one_hot(self.a_his, N_A, dtype=tf.float32), axis=1, keep_dims=True))
+
+                    # Actor's Policy loss
+                    exp_v = tf.reduce_sum(log_prob * tf.stop_gradient(td))
+                    entropy = tf.reduce_sum(self.action_prob * tf.log(self.action_prob),
                                              axis=1, keep_dims=True)  # encourage exploration
-                    self.exp_v = ENTROPY_BETA * entropy + exp_v
-                    self.a_loss = tf.reduce_mean(-self.exp_v)
+                    self.a_loss = self.c_loss + exp_v - ENTROPY_BETA * entropy
+                    
+                    # self.a_loss_summary = variable_summaries(self.a_loss)
+                    # self.merged_summary = tf.summary.merge(
+                    #     self.a_loss_summary
+                    # )
+                    
 
                 with tf.name_scope('local_grad'):
                     self.a_grads = tf.gradients(self.a_loss, self.a_params)
                     self.c_grads = tf.gradients(self.c_loss, self.c_params)
-
+                    # self.a_grads_summary = variable_summaries(self.a_grads)
+                    # self.c_grads_summary = variable_summaries(self.c_grads)
+                    # self.merged_summary = tf.summary.merge(
+                    #     self.a_grads_summary +
+                    #     self.c_grads_summary
+                    # )
+        
             with tf.name_scope('sync'):
                 with tf.name_scope('pull'):
                     self.pull_a_params_op = [l_p.assign(g_p) for l_p, g_p in zip(self.a_params, globalActorCritic.a_params)]
@@ -61,7 +97,7 @@ class ActorCriticNet(object):
                 with tf.name_scope('push'):
                     self.update_a_op = OPT_A.apply_gradients(zip(self.a_grads, globalActorCritic.a_params))
                     self.update_c_op = OPT_C.apply_gradients(zip(self.c_grads, globalActorCritic.c_params))
-
+        
     def _build_net(self, scope):
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('actor'):

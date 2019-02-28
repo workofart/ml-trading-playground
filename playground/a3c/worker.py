@@ -76,6 +76,9 @@ class Worker(object):
             
             GLOBAL_EP += 1
             v_s_ = 0   # terminal
+            # if hasattr(self.AC, 'merged_summary'):
+            #     self.summary_writer.add_summary(self.AC.merged_summary)
+
             log_scalars(self.summary_writer, 'profit', info['marketValue'] - INIT_CASH, GLOBAL_EP)
             log_scalars(self.summary_writer, 'avg_reward', np.mean(reward_list), GLOBAL_EP)
             log_histogram(self.summary_writer, 'reward_dist', reward_list, GLOBAL_EP)
