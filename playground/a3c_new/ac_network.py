@@ -39,19 +39,31 @@ class AC_Network():
 
             w_init = tf.random_normal_initializer(0., .1)
             with tf.variable_scope('actor'):
-                l1 = tf.layers.dense(self.state, NN1_NEURONS, tf.nn.relu, kernel_initializer=w_init, name='layer_actor1')
-                l2 = tf.layers.dense(l1, NN2_NEURONS, tf.nn.relu, kernel_initializer=w_init, name='layer_actor2')
+                l1 = tf.layers.dense(self.state,
+                                    NN1_NEURONS, 
+                                    tf.nn.relu, 
+                                    kernel_initializer=w_init,
+                                    bias_initializer=tf.constant_initializer(0.1),
+                                    name='layer_actor1')
+                l2 = tf.layers.dense(l1, 
+                                    NN2_NEURONS, 
+                                    tf.nn.relu, 
+                                    kernel_initializer=w_init, 
+                                    bias_initializer=tf.constant_initializer(0.1),
+                                    name='layer_actor2')
             # a_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/actor')
             # c_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/critic')
 
             
             #Output layers for policy and value estimations
-            self.policy = tf.layers.dense(l2,action_N,
+            self.policy = tf.layers.dense(l2,
+                action_N,
                 activation=tf.nn.softmax,
                 kernel_initializer=normalized_columns_initializer(0.01),
                 # kernel_initializer=w_init,
                 bias_initializer=None)
-            self.value = tf.layers.dense(l2,1,
+            self.value = tf.layers.dense(l2,
+                1,
                 activation=None,
                 kernel_initializer=normalized_columns_initializer(1.0),
                 # kernel_initializer=w_init,
