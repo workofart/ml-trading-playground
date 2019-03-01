@@ -113,7 +113,7 @@ class Worker():
                     a = np.random.choice(a_dist[0],p=a_dist[0])
                     a = np.argmax(a_dist == a)
                     
-                    s, r, d, _ = self.env.step(self.actions[a])
+                    s, r, d, _ = self.env.step(a)
                     if d == False:
                         s1 = self.env._get_obs()
                     else:
@@ -155,7 +155,7 @@ class Worker():
                         saver.save(sess,self.model_path+'/model-'+str(episode_count)+'.cptk')
                         print ("Saved Model")
 
-                    test(self.env, sess, self.local_AC, episode_count, self.name)
+                    # test(self.env, sess, self.local_AC, episode_count, self.name)
                     mean_reward = np.mean(self.episode_rewards[-5:])
                     mean_length = np.mean(self.episode_lengths[-5:])
                     mean_value = np.mean(self.episode_mean_values[-5:])
