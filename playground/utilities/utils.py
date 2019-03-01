@@ -74,7 +74,7 @@ def evaluate_result(pred, x, y, mode):
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
 
-def plot_trades(EP, prices, actions, permitted_trades):
+def plot_trades(EP, prices, actions, permitted_trades, name=''):
     def get_buys_sells(actions):
         buys, sells = {}, {}
         buys['x'] = []
@@ -111,7 +111,7 @@ def plot_trades(EP, prices, actions, permitted_trades):
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs', str(get_latest_run_count() - 1), 'test_trades'))
     if os.path.isdir(path) is False:
         os.mkdir(path)
-    plt.savefig(path + '/EP{}.png'.format(EP), dpi=400)
+    plt.savefig(path + '/{0}EP{1}.png'.format(name, EP), dpi=400)
 
 def plot_reward(rewards):
     plt.clf()

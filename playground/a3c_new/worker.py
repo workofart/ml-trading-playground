@@ -3,12 +3,30 @@ import numpy as np
 import scipy.signal
 
 from playground.a3c_new.ac_network import AC_Network
-from playground.utilities.utils import update_target_graph
+from playground.utilities.utils import update_target_graph, plot_trades
 from playground.dqn.experience_buffer import Experience_Buffer
+
+DATA_LENGTH = 300
 
 # Discounting function used to calculate discounted returns.
 def discount(x, gamma):
     return scipy.signal.lfilter([1], [1, -gamma], x[::-1], axis=0)[::-1]
+
+def test(env, sess, actor, ep = 0, name=''):
+    state = env.reset() # To start the process
+
+    prices = []
+    actions = []
+    for i in range(DATA_LENGTH):
+        prices.append(state[0][2])
+        #Take an action using probabilities from policy network output.
+        a_dist,v = sess.run([actor.policy,actor.value], 
+            feed_dict={actor.state:state})
+        a = np.random.choice(a_dist[0],p=a_dist[0])
+        action = np.argmax(a_dist == a)
+        actions.append(action)
+        state, reward, done, _ = env.step(action)
+    plot_trades(ep, prices, actions, env.permitted_trades, name)
 
 EXPERIENCE_BUFFER_SIZE = 100
 
@@ -94,7 +112,7 @@ class Worker():
                         feed_dict={self.local_AC.state:s})
                     a = np.random.choice(a_dist[0],p=a_dist[0])
                     a = np.argmax(a_dist == a)
-
+                    
                     s, r, d, _ = self.env.step(self.actions[a])
                     if d == False:
                         s1 = self.env._get_obs()
@@ -137,6 +155,7 @@ class Worker():
                         saver.save(sess,self.model_path+'/model-'+str(episode_count)+'.cptk')
                         print ("Saved Model")
 
+                    test(self.env, sess, self.local_AC, episode_count, self.name)
                     mean_reward = np.mean(self.episode_rewards[-5:])
                     mean_length = np.mean(self.episode_lengths[-5:])
                     mean_value = np.mean(self.episode_mean_values[-5:])
