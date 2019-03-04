@@ -6,8 +6,6 @@ from playground.a3c_new.ac_network import AC_Network
 from playground.utilities.utils import update_target_graph, plot_trades
 from playground.dqn.experience_buffer import Experience_Buffer
 
-DATA_LENGTH = 300
-
 # Discounting function used to calculate discounted returns.
 def discount(x, gamma):
     return scipy.signal.lfilter([1], [1, -gamma], x[::-1], axis=0)[::-1]
@@ -17,7 +15,8 @@ def test(env, sess, actor, ep = 0, name=''):
 
     prices = []
     actions = []
-    for i in range(DATA_LENGTH):
+    done = False
+    while done is False:
         prices.append(state[0][2])
         #Take an action using probabilities from policy network output.
         a_dist,v = sess.run([actor.policy,actor.value], 
@@ -28,7 +27,7 @@ def test(env, sess, actor, ep = 0, name=''):
         state, reward, done, _ = env.step(action)
     plot_trades(ep, prices, actions, env.permitted_trades, name)
 
-EXPERIENCE_BUFFER_SIZE = 100
+EXPERIENCE_BUFFER_SIZE = 25
 
 class Worker():
     def __init__(self,env,name,s_size,a_size,trainer,model_path,global_episodes):
@@ -47,9 +46,6 @@ class Worker():
         self.local_AC = AC_Network(s_size,a_size,self.name,trainer)
         self.update_local_ops = update_target_graph('global',self.name)        
         
-        # TODO: setup the env
-
-
         self.actions = np.identity(a_size,dtype=bool).tolist()
         
         self.env = env
@@ -62,7 +58,7 @@ class Worker():
         actions = rollout[:,1].astype(np.int32)
         rewards = rollout[:,2].astype(np.float32)
         next_states = [i.astype(np.float32) for i in rollout[:,3]]
-        values = rollout[:,5].astype(np.float32)
+        values = rollout[:,4].astype(np.float32)
         
         # Here we take the rewards and values from the rollout, and use them to 
         # generate the advantage and discounted returns. 
@@ -84,12 +80,12 @@ class Worker():
             self.local_AC.entropy,
             self.local_AC.grad_norms,
             self.local_AC.var_norms,
-            # self.local_AC.state_out,
             self.local_AC.apply_grads,
             self.local_AC.gradients],
             feed_dict=feed_dict)
-        print(min([i.min() for i in gradients]))
-        print(max([i.max() for i in gradients]))
+        # print(min([i.min() for i in gradients]))
+        # print(max([i.max() for i in gradients]))
+        # print(np.mean([np.mean(i) for i in gradients]))
         return v_l / len(rollout),p_l / len(rollout),e_l / len(rollout), g_n,v_n
         
     def work(self,max_episode_length,gamma,sess,coord,saver):
@@ -119,7 +115,9 @@ class Worker():
                     else:
                         s1 = s
                         
-                    experience_buffer.add([s[0],a,r,s1[0],d,v[0,0]])
+                    # Need to match the assumption input data for the train()
+                    # [state, actions, rewards, next_state, values]
+                    experience_buffer.add([s[0],a,r,s1[0],v[0,0]])
                     episode_values.append(v[0,0])
 
                     episode_reward += r
@@ -136,17 +134,22 @@ class Worker():
                             feed_dict={self.local_AC.state:s})[0,0]
                         v_l,p_l,e_l,g_n,v_n = self.train(experience_buffer,sess,gamma,v1)
                         experience_buffer.clear()
+                        # Update the global agent
                         sess.run(self.update_local_ops)
                     if d == True:
                         break
                                             
-                self.episode_rewards.append(episode_reward)
+                self.episode_rewards.append(episode_reward/episode_step_count)
                 self.episode_lengths.append(episode_step_count)
                 self.episode_mean_values.append(np.mean(episode_values))
                 
                 # Update the network using the episode buffer at the end of the episode.
                 if experience_buffer.size() != 0:
                     v_l,p_l,e_l,g_n,v_n = self.train(experience_buffer,sess,gamma,0.0)
+                    episode_count = sess.run(self.global_episodes)
+
+                    if episode_count % 10 and episode_count > 0:
+                        print("Ep:{0} | Value Loss: {1} | Policy Loss: {2}".format(episode_count, v_l, p_l))
                                 
                     
                 # Periodically save gifs of episodes, model parameters, and summary statistics.
@@ -157,11 +160,9 @@ class Worker():
 
                     # test(self.env, sess, self.local_AC, episode_count, self.name)
                     mean_reward = np.mean(self.episode_rewards[-5:])
-                    mean_length = np.mean(self.episode_lengths[-5:])
                     mean_value = np.mean(self.episode_mean_values[-5:])
                     summary = tf.Summary()
                     summary.value.add(tag='Perf/Reward', simple_value=float(mean_reward))
-                    summary.value.add(tag='Perf/Length', simple_value=float(mean_length))
                     summary.value.add(tag='Perf/Value', simple_value=float(mean_value))
                     summary.value.add(tag='Losses/Value Loss', simple_value=float(v_l))
                     summary.value.add(tag='Losses/Policy Loss', simple_value=float(p_l))

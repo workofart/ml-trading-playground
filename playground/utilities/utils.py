@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os, re
+import os, re, shutil
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize as norm2
@@ -215,10 +215,18 @@ def log_scalars(writer, tag, values, step):
 
 def cleanup_logs():
     pattern = 'events.out.tfevents.*'
+    log_dir_pattern = 'train_*'
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))
+
+    parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
     for f in os.listdir(path):
         if re.search(pattern, f):
             os.remove(os.path.join(path, f))
+
+    for f in os.listdir(parent_path):
+        if re.search(log_dir_pattern, f):
+            shutil.rmtree(os.path.join(parent_path, f), ignore_errors=True)
 
 def get_latest_run_count():
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))
