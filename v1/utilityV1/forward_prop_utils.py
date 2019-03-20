@@ -71,6 +71,8 @@ def L_model_forward(X, parameters, last_activation='linear', learning_rate=0.007
     Arguments:
     X -- data, numpy array of shape (input size, number of examples)
     parameters -- output of initialize_parameters_deep()
+    last_activation -- the last layer's activation function, usually different from the first "n" layers
+    learning_rate -- how much each gradient descent step should
 
     Returns:
     AL -- last post-activation value
