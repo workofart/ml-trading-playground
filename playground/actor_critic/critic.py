@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 
 GAMMA = 0.9     # reward discount in TD error
-
+NN1_NEURONS = 32
+NN2_NEURONS = 16
 class Critic:
 
     def __init__(self, sess, n_features, lr=0.01):
@@ -15,7 +16,7 @@ class Critic:
         with tf.variable_scope('Critic'):
             l1 = tf.layers.dense(
                 inputs=self.s,
-                units=20,  # number of hidden units
+                units=NN1_NEURONS,  # number of hidden units
                 activation=tf.nn.relu,  # None
                 # have to be linear to make sure the convergence of actor.
                 # But linear approximator seems hardly learns the correct Q.
@@ -24,8 +25,19 @@ class Critic:
                 name='l1'
             )
 
-            self.v = tf.layers.dense(
+            l2 = tf.layers.dense(
                 inputs=l1,
+                units=NN2_NEURONS,  # number of hidden units
+                activation=tf.nn.relu,  # None
+                # have to be linear to make sure the convergence of actor.
+                # But linear approximator seems hardly learns the correct Q.
+                kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name='l2'
+            )
+
+            self.v = tf.layers.dense(
+                inputs=l2,
                 units=1,  # output units
                 activation=None,
                 kernel_initializer=tf.random_normal_initializer(0., .1),  # weights

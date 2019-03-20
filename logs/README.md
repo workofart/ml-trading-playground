@@ -1,0 +1,1 @@
+#### This folder contains logs (test trade gifs, saved networks, tensorboard data) for runtime. There are separate dedicated folders "feature_logs" (e.g. dqn_logs, a3c_logs) that stores archive logs.

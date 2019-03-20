@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os, re
+import os, re, shutil
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize as norm2
@@ -74,7 +74,7 @@ def evaluate_result(pred, x, y, mode):
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
 
-def plot_trades(EP, prices, actions, permitted_trades):
+def plot_trades(EP, prices, actions, permitted_trades, name=''):
     def get_buys_sells(actions):
         buys, sells = {}, {}
         buys['x'] = []
@@ -107,8 +107,11 @@ def plot_trades(EP, prices, actions, permitted_trades):
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
     plt.title('Agent\'s Permitted Actions (Actual Trades)')
-
-    plt.savefig(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'snapshots', 'test_trades_EP{}.png'.format(EP))), dpi=400)
+    
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs', str(get_latest_run_count() - 1), 'test_trades'))
+    if os.path.isdir(path) is False:
+        os.mkdir(path)
+    plt.savefig(path + '/{0}EP{1}.png'.format(name, EP), dpi=400)
 
 def plot_reward(rewards):
     plt.clf()
@@ -212,10 +215,18 @@ def log_scalars(writer, tag, values, step):
 
 def cleanup_logs():
     pattern = 'events.out.tfevents.*'
+    log_dir_pattern = 'train_*'
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))
+
+    parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
     for f in os.listdir(path):
         if re.search(pattern, f):
             os.remove(os.path.join(path, f))
+
+    for f in os.listdir(parent_path):
+        if re.search(log_dir_pattern, f):
+            shutil.rmtree(os.path.join(parent_path, f), ignore_errors=True)
 
 def get_latest_run_count():
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))
@@ -225,4 +236,16 @@ def get_latest_run_count():
     else:
         return int(max(dirs)) + 1
 
-            
+def update_target_graph(from_scope, to_scope):
+    # Get the parameters of our DQNNetwork
+    from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, from_scope)
+    
+    # Get the parameters of our Target_network
+    to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, to_scope)
+
+    op_holder = []
+    
+    # Update our target_q_network parameters with q_network parameters
+    for from_var,to_var in zip(from_vars,to_vars):
+        op_holder.append(to_var.assign(from_var))
+    return op_holder
