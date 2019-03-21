@@ -88,8 +88,8 @@ class Worker():
             self.local_AC.apply_grads,
             self.local_AC.gradients],
             feed_dict=feed_dict)
-        print(min([i.min() for i in gradients]))
-        print(max([i.max() for i in gradients]))
+        # print(min([i.min() for i in gradients]))
+        # print(max([i.max() for i in gradients]))
         return v_l / len(rollout),p_l / len(rollout),e_l / len(rollout), g_n,v_n
         
     def work(self,max_episode_length,gamma,sess,coord,saver):
@@ -140,7 +140,7 @@ class Worker():
                     if d == True:
                         break
                                             
-                self.episode_rewards.append(episode_reward)
+                self.episode_rewards.append(episode_reward / DATA_LENGTH)
                 self.episode_lengths.append(episode_step_count)
                 self.episode_mean_values.append(np.mean(episode_values))
                 
