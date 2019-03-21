@@ -1,5 +1,6 @@
 import numpy as np, random
 from collections import deque
+import itertools
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD, Adagrad
@@ -15,23 +16,24 @@ LEARNING_RATE = 1e-4
 TRAINING_EPOCHS = 5
 NEURONS_PER_DIM = 32
 
+BUFFER_SIZE = 1000
+
 # Vector Shapes
-INPUT_DIM = [1, 6]
+INPUT_DIM = [1, 4]
 class PG_Agent():
 
-    def __init__(self, env, data):
+    def __init__(self, env):
         # init some parameters
         self.epsilon = INITIAL_EPSILON
         self.env = env
-        self.replay_buffer = deque(maxlen=5000)
-        self.state_dim = env.observation_space.shape[1] + 2 # portfolio and cash
+        self.replay_buffer = deque(maxlen=BUFFER_SIZE)
+        self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.state_input = np.zeros((1, self.state_dim))
         self.y_input = np.zeros((1, self.action_dim))
-        self.create_pg_network(data)
-        # self.create_supervised_accuracy(self.model, x)
+        self.create_pg_network()
     
-    def create_pg_network(self, data):
+    def create_pg_network(self):
         model = Sequential()
         model.add(Dense(self.state_dim*NEURONS_PER_DIM, input_shape=(self.state_dim,), activation='relu', bias_initializer='zero', kernel_initializer='glorot_normal'))
         model.add(Dense(self.action_dim, activation='softmax'))
@@ -40,12 +42,11 @@ class PG_Agent():
         self.network = model
     
     def train_pg_network(self, batch_size=32):
-        replay_samples = self.replay_buffer[random.randint(0, len(self.replay_buffer)-1)]
-        # replay_samples = random.sample(self.replay_buffer, batch_size)
+        # replay_samples = self.replay_buffer[random.randint(0, len(self.replay_buffer)-1)]
+        replay_samples = random.sample(self.replay_buffer, batch_size)
         state_batch = np.squeeze([data[0] for data in replay_samples])
         y_batch = np.squeeze([data[1] for data in replay_samples])
         self.network.fit(state_batch, y_batch, epochs=TRAINING_EPOCHS, batch_size=batch_size, verbose=0)
-        # self.replay_buffer = []
 
     # TODO: TBD
     def accuracy(self, model, x):
@@ -67,11 +68,8 @@ class PG_Agent():
         y[action] = 1
         return y, action
 
-    def perceive(self, states, actions):
-        temp = []
-        for index, value in enumerate(states):
-            temp.append([states[index], [actions[index]]])
-        self.replay_buffer.append(temp)
+    def perceive(self, state, action):
+        self.replay_buffer.append([state, action])
 
     def discounted_rewards(self, reward):
         reward_discounted = np.zeros_like(reward)
