@@ -111,3 +111,5 @@ dqn_logs/
 events.out.tfevents.*
 playground/snapshots/*.png
 playground/snapshots/archive
+ac_logs/
+a3c_logs/

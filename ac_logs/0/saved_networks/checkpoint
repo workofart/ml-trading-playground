@@ -1,6 +1,0 @@
-model_checkpoint_path: "network-ac-8900"
-all_model_checkpoint_paths: "network-ac-8500"
-all_model_checkpoint_paths: "network-ac-8600"
-all_model_checkpoint_paths: "network-ac-8700"
-all_model_checkpoint_paths: "network-ac-8800"
-all_model_checkpoint_paths: "network-ac-8900"
