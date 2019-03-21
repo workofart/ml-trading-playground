@@ -5,13 +5,15 @@ import tensorflow as tf
 from playground.env.trading_env import TradingEnv
 from playground.a3c_new.ac_network import AC_Network
 from playground.a3c_new.worker import Worker
+from playground.utilities.utils import cleanup_logs
 
 max_episode_length = 30
 gamma = .99 # discount rate for advantage estimation and reward discounting
 load_model = False
 model_path = './model'
 
-DATA_LENGTH = 300
+LEARNING_RATE = 5e-8
+DATA_LENGTH = 1000
 INIT_CASH = 100
 dummy_env = TradingEnv(DATA_LENGTH, INIT_CASH)
 s_size = dummy_env.observation_space.shape[1]
@@ -23,14 +25,16 @@ if __name__ == '__main__':
 
     if not os.path.exists(model_path):
         os.makedirs(model_path)
+
+    cleanup_logs()
         
     # #Create a directory to save episode playback gifs to
     # if not os.path.exists('./frames'):
     #     os.makedirs('./frames')
 
-    with tf.device("/cpu:0"): 
+    with tf.device("/gpu:0"): 
         global_episodes = tf.Variable(0,dtype=tf.int32,name='global_episodes',trainable=False)
-        trainer = tf.train.AdamOptimizer(learning_rate=1e-6)
+        trainer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
         master_network = AC_Network(s_size,a_size,'global',None) # Generate global network
         num_workers = multiprocessing.cpu_count() # Set workers to number of available CPU threads
         workers = []
@@ -39,7 +43,7 @@ if __name__ == '__main__':
             workers.append(Worker(TradingEnv(DATA_LENGTH, INIT_CASH),i,s_size,a_size,trainer,model_path,global_episodes))
         saver = tf.train.Saver(max_to_keep=5)
 
-    with tf.Session() as sess:
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         coord = tf.train.Coordinator()
         if load_model == True:
             print ('Loading Model...')

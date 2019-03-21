@@ -30,9 +30,6 @@ class TradingEnv():
         self.previous_portfolio = self.cash
         self.reset()
 
-        # Cleanup
-        cleanup_logs()
-
     # Reset method called between episodes
     def reset(self):
         self.episode_total_reward = 0
