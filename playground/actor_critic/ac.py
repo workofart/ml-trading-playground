@@ -38,6 +38,8 @@ INIT_CASH = 100
 # Network params
 SAVE_NETWORK = 100
 
+SAVED_MODEL_PATH = "playground/saved_networks/ac"
+
 env = TradingEnv(data_length=DATA_LENGTH, INIT_CASH=INIT_CASH)
 
 N_F = env.observation_space.shape[1]
@@ -100,5 +102,6 @@ for i in tqdm(range(EPISODE)):
     
     # save network frequently
     if i % SAVE_NETWORK == 0 and i > 0:
-        saver.save(sess, 'logs/' + str(get_latest_run_count()-1) + '/saved_networks/' + 'network' + '-ac', global_step = i)
+        # TODO: finish integrating run count into path
+        saver.save(sess, SAVED_MODEL_PATH + 'network-ac', global_step = i)
 

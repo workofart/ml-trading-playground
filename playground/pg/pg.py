@@ -21,7 +21,7 @@ def main():
         state_list, reward_list, one_hot_actions = [], [], []
         print('---- Episode %d ----' %(i))
         while done is False:
-            one_hot_action, action = agent.policy_forward(state)
+            one_hot_action, action = agent.act(state)
             state, reward, done, _ = agent.env.step(action, agent)
             state_list.append(state)
             one_hot_actions.append(one_hot_action)
@@ -37,8 +37,8 @@ def main():
             # agent.perceive(state, epdlogp[-1])
             agent.perceive(state, one_hot_action)
 
-            if len(agent.replay_buffer) >= BATCH_SIZE and agent.env.time_step % TRAIN_EVERY_TIMESTEP:
-                agent.train_pg_network(BATCH_SIZE)
+            if len(agent.replay_buffer) >= BATCH_SIZE and agent.env.time_step % TRAIN_EVERY_TIMESTEP == 0:
+                agent.train_pg_network(i, BATCH_SIZE)
 
             # After all the steps are completed, summarize the stats
             if done is True and i % TEST_EVERY_N_EPISODES == 0 and i >= 0:
@@ -49,11 +49,12 @@ def main():
         print('[TRAIN] - EP{0} | Avg reward: {1}'.format(i, avg_reward_list[-1]))
 
 def test(agent, i):
+    agent.isTrain = False
     state = agent.env.reset()
     reward_list = []
     done = False
     while done is False:
-        grad, action = agent.policy_forward(state) # direct action for test
+        one_hot_action, action = agent.act(state) # direct action for test
         state, reward, done, _ = agent.env.step(action)
         reward_list.append(reward)
     print('[TEST] - EP{0} | Avg Reward: {1}'.format(i, np.mean(reward_list)))

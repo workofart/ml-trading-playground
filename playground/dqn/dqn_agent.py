@@ -15,6 +15,9 @@ GAMMA = 0.95 # discount factor for q value
 UPDATE_TARGET_NETWORK = 10
 SAVE_NETWORK = 50
 
+SAVED_MODEL_PATH = "playground/saved_networks/dqn"
+SAVED_LOG_PATH = "playground/logs/dqn"
+
 class DQN_Agent():
 
     def __init__(self, env, isTrain = True, isLoad = False):
@@ -40,12 +43,14 @@ class DQN_Agent():
         self.session.run(tf.initializers.global_variables())
 
         # Tensorboard
+        # TODO: finish integrating run count into path
         self.summary_writer = tf.summary.FileWriter('logs/' + str(get_latest_run_count()))
         self.summary_writer.add_graph(self.session.graph)
 
         # loading networks
+        # TODO: finish integrating run count into path
         self.saver = tf.train.Saver()
-        checkpoint = tf.train.get_checkpoint_state("saved_networks")
+        checkpoint = tf.train.get_checkpoint_state(SAVED_MODEL_PATH)
         if (self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path) or isLoad is True:
                 self.saver.restore(self.session, checkpoint.model_checkpoint_path)
                 print("Successfully loaded:", checkpoint.model_checkpoint_path)
@@ -102,7 +107,7 @@ class DQN_Agent():
 
         # save network 9 times per episode
         if ep % SAVE_NETWORK == 0:
-            self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = ep)
+            self.saver.save(self.session, SAVED_MODEL_PATH + 'network-dqn', global_step = ep)
 
         return c
 
