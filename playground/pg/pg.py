@@ -28,6 +28,7 @@ def main():
             reward_list.append(reward)
 
             # TODO: Need revision
+            # Refer: https://github.com/simoninithomas/Deep_reinforcement_learning_Course/blob/master/Policy%20Gradients/Cartpole/Cartpole%20REINFORCE%20Monte%20Carlo%20Policy%20Gradients.ipynb
             # episode_reward = np.vstack(reward_list)
             # discounted_epr = agent.discounted_rewards(episode_reward)
             # discounted_epr -= np.mean(discounted_epr)

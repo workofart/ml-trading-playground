@@ -228,9 +228,8 @@ def cleanup_logs():
         if re.search(log_dir_pattern, f):
             shutil.rmtree(os.path.join(parent_path, f), ignore_errors=True)
 
-def get_latest_run_count():
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))
-    dirs = [name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))]
+def get_latest_run_count(root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))):
+    dirs = [name for name in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, name))]
     if len(dirs) == 0:
         return 0
     else:

@@ -1,0 +1,1 @@
+This folder contains the saved models produced by the policy gradient training process.

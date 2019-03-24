@@ -1,6 +1,7 @@
 import numpy as np, random
 from collections import deque
 import itertools, os, keras
+from playground.utilities.utils import get_latest_run_count
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD, Adagrad
@@ -22,11 +23,15 @@ SAVED_LOG_PATH = "playground/logs/pg"
 
 BUFFER_SIZE = 1000
 
+# Use the log folder to determine the run count to ensure logs and models are in sync
+RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
 # Vector Shapes
 INPUT_DIM = [1, 4]
 
-# TODO: Tensorboard keras integration
-tbCallback = keras.callbacks.TensorBoard(log_dir=SAVED_LOG_PATH, write_graph=True, write_images=True)
+# TODO: Too many files
+tbCallback = keras.callbacks.TensorBoard(log_dir=os.path.join(SAVED_LOG_PATH, RUN_COUNT),
+                                        write_graph=True,
+                                        write_images=True)
 
 class PG_Agent():
 
@@ -57,8 +62,10 @@ class PG_Agent():
         y_batch = np.squeeze([data[1] for data in replay_samples])
         self.network.fit(state_batch, y_batch, epochs=TRAINING_EPOCHS, batch_size=batch_size, verbose=0, callbacks=[tbCallback])
         if ep % SAVE_NETWORK_PER_N_EPISODES == 0 and ep > 0:
-            # TODO: finish integrating run count into path
-            self.network.save(os.path.join(SAVED_MODEL_PATH, 'network-pg-{0}.model'.format(ep)))
+            model_dir = os.path.join(SAVED_MODEL_PATH, RUN_COUNT)
+            if os.path.isdir(model_dir) is False:
+                os.mkdir(model_dir)
+            self.network.save(model_dir + '/network-pg-{0}.model'.format(ep))
 
     def act(self, state):
         y = np.zeros([self.action_dim])
