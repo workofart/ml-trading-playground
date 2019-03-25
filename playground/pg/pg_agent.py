@@ -38,6 +38,7 @@ class PG_Agent():
     def __init__(self, env):
         # init some parameters
         self.epsilon = INITIAL_EPSILON
+        self.FINAL_EPSILON = FINAL_EPSILON
         self.env = env
         self.replay_buffer = deque(maxlen=BUFFER_SIZE)
         self.state_dim = env.observation_space.shape[1]
@@ -60,7 +61,8 @@ class PG_Agent():
         replay_samples = random.sample(self.replay_buffer, batch_size)
         state_batch = np.squeeze([data[0] for data in replay_samples])
         y_batch = np.squeeze([data[1] for data in replay_samples])
-        self.network.fit(state_batch, y_batch, epochs=TRAINING_EPOCHS, batch_size=batch_size, verbose=0, callbacks=[tbCallback])
+        self.network.fit(state_batch, y_batch, epochs=TRAINING_EPOCHS, batch_size=batch_size, verbose=0)
+        # , callbacks=[tbCallback])
         if ep % SAVE_NETWORK_PER_N_EPISODES == 0 and ep > 0:
             model_dir = os.path.join(SAVED_MODEL_PATH, RUN_COUNT)
             if os.path.isdir(model_dir) is False:
@@ -70,20 +72,27 @@ class PG_Agent():
     def act(self, state):
         y = np.zeros([self.action_dim])
         pred_prob = self.network.predict(state)[0]
-        if self.isTrain == True:
-            action = np.random.choice(self.action_dim, size=1, p=np.squeeze(pred_prob))[0]
+        if self.isTrain == True and random.random() < self.epsilon:
+            action = random.randint(0, 2)
         else:
             action = np.argmax(pred_prob)
         y[action] = 1
         return y, action # y is an one-hot array, action is the index selected
 
-    def perceive(self, state, action):
-        self.replay_buffer.append([state, action])
+    def perceive(self, state, action, reward):
+        self.replay_buffer.append([state, action, reward])
 
-    def discounted_rewards(self, reward):
-        reward_discounted = np.zeros_like(reward)
-        track = 0
-        for index in reversed(range(len(reward))):
-            track = track * GAMMA + reward[index]
-            reward_discounted[index] = track
-        return reward_discounted
+    def discounted_norm_rewards(self, rewards):
+        reward_discounted = np.zeros_like(rewards)
+        cumulative = 0
+        for index in reversed(range(len(rewards))):
+            cumulative = cumulative * GAMMA + rewards[index]
+            reward_discounted[index] = cumulative
+
+        mean = np.mean(reward_discounted)
+        std = np.std(reward_discounted)
+        if std == 0:
+            discounted_norm_rewards = [0] # Initially when std = 0
+        else:
+            discounted_norm_rewards = (reward_discounted - mean) / std
+        return discounted_norm_rewards

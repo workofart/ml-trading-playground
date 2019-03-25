@@ -74,7 +74,7 @@ def evaluate_result(pred, x, y, mode):
     plt.legend(['predict', 'true'], loc='upper left')
     plt.show()
 
-def plot_trades(EP, prices, actions, permitted_trades, name=''):
+def plot_trades(EP, prices, actions, permitted_trades=None, name='', path=None):
     def get_buys_sells(actions):
         buys, sells = {}, {}
         buys['x'] = []
@@ -99,16 +99,17 @@ def plot_trades(EP, prices, actions, permitted_trades, name=''):
     plt.xlabel('Timesteps')
     plt.title('Agent\'s Intended Actions')
     # Permitted Trades
-    plt.subplot(2,1,2)
-    plt.plot(prices, linewidth=1, color='#808080')
-    p_buys, p_sells = get_buys_sells(permitted_trades)
-    plt.plot(p_buys['x'], p_buys['y'], '.', markersize=2, color='g')
-    plt.plot(p_sells['x'], p_sells['y'], '.', markersize=2, color='r')
-    plt.ylabel('Prices')
-    plt.xlabel('Timesteps')
-    plt.title('Agent\'s Permitted Actions (Actual Trades)')
-    
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs', str(get_latest_run_count() - 1), 'test_trades'))
+    if permitted_trades is not None:
+        plt.subplot(2,1,2)
+        plt.plot(prices, linewidth=1, color='#808080')
+        p_buys, p_sells = get_buys_sells(permitted_trades)
+        plt.plot(p_buys['x'], p_buys['y'], '.', markersize=2, color='g')
+        plt.plot(p_sells['x'], p_sells['y'], '.', markersize=2, color='r')
+        plt.ylabel('Prices')
+        plt.xlabel('Timesteps')
+        plt.title('Agent\'s Permitted Actions (Actual Trades)')
+    if path == None:
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs', str(get_latest_run_count() - 1), 'test_trades'))
     if os.path.isdir(path) is False:
         os.mkdir(path)
     plt.savefig(path + '/{0}EP{1}.png'.format(name, EP), dpi=400)
@@ -230,10 +231,11 @@ def cleanup_logs():
 
 def get_latest_run_count(root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs'))):
     dirs = [name for name in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, name))]
-    if len(dirs) == 0:
-        return 0
-    else:
-        return int(max(dirs)) + 1
+    return len(dirs)
+    # if len(dirs) == 0:
+    #     return 0
+    # else:
+    #     return int(max(dirs)) + 1
 
 def update_target_graph(from_scope, to_scope):
     # Get the parameters of our DQNNetwork

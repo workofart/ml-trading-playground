@@ -1,12 +1,13 @@
 from playground.utilities.utils import read_data, generate_datasets, plot_trades, plot_reward
 import numpy as np, pandas as pd
+import os
 from playground.pg.pg_agent import PG_Agent
 from playground.env.trading_env import TradingEnv
 # ---------------------------------------------------------
-EPISODE = 200 # Episode limitation
-TEST_EVERY_N_EPISODES = 10
+EPISODE = 1000 # Episode limitation
+TEST_EVERY_N_EPISODES = 100
 BATCH_SIZE = 64 # size of minibatch
-TRAIN_EVERY_TIMESTEP = 100
+TRAIN_EVERY_TIMESTEP = 500
 
 def main():
     env = TradingEnv(1000, 100)
@@ -19,7 +20,6 @@ def main():
         agent.replay_buffer.clear()
         state = agent.env.reset()
         state_list, reward_list, one_hot_actions = [], [], []
-        print('---- Episode %d ----' %(i))
         while done is False:
             one_hot_action, action = agent.act(state)
             state, reward, done, _ = agent.env.step(action, agent)
@@ -27,38 +27,38 @@ def main():
             one_hot_actions.append(one_hot_action)
             reward_list.append(reward)
 
-            # TODO: Need revision
-            # Refer: https://github.com/simoninithomas/Deep_reinforcement_learning_Course/blob/master/Policy%20Gradients/Cartpole/Cartpole%20REINFORCE%20Monte%20Carlo%20Policy%20Gradients.ipynb
-            # episode_reward = np.vstack(reward_list)
-            # discounted_epr = agent.discounted_rewards(episode_reward)
-            # discounted_epr -= np.mean(discounted_epr)
-            # discounted_epr /= np.std(discounted_epr)
-            # epdlogp = np.vstack(one_hot_actions)
-            # epdlogp *= discounted_epr
-            # agent.perceive(state, epdlogp[-1])
-            agent.perceive(state, one_hot_action)
+            discounted_rewards = agent.discounted_norm_rewards(reward_list)
+            agent.perceive(state, one_hot_action, discounted_rewards[0])
 
             if len(agent.replay_buffer) >= BATCH_SIZE and agent.env.time_step % TRAIN_EVERY_TIMESTEP == 0:
                 agent.train_pg_network(i, BATCH_SIZE)
 
-            # After all the steps are completed, summarize the stats
-            if done is True and i % TEST_EVERY_N_EPISODES == 0 and i >= 0:
-                test(agent, i)
-        
-        # Summary after one EP
+        # Update epsilon after every episode
+        if agent.isTrain is True and agent.epsilon > agent.FINAL_EPSILON:
+            agent.epsilon -= (1 - agent.FINAL_EPSILON) / (EPISODE/1.2)
+
+        # Summary after one EP, test and summarize the stats
+        if i % TEST_EVERY_N_EPISODES == 0 and i >= 0:
+            test(agent, i)
         avg_reward_list.append(np.mean(reward_list))    
-        print('[TRAIN] - EP{0} | Avg reward: {1}'.format(i, avg_reward_list[-1]))
+        print('EP{0} | TRAIN | Avg reward: {1}'.format(i, avg_reward_list[-1]))
 
 def test(agent, i):
     agent.isTrain = False
     state = agent.env.reset()
     reward_list = []
+    actions = []
+    prices = []
     done = False
     while done is False:
+        prices.append(state[0][2])
         one_hot_action, action = agent.act(state) # direct action for test
         state, reward, done, _ = agent.env.step(action)
+        actions.append(action)
         reward_list.append(reward)
-    print('[TEST] - EP{0} | Avg Reward: {1}'.format(i, np.mean(reward_list)))
+    print('EP{0} | TEST | Avg Reward: {1}'.format(i, np.mean(reward_list)))
+    plot_trades(i, prices, actions, None, name='PG_Test', path=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'pg', 'test_trades')))
+    agent.isTrain = True
 
 if __name__ == '__main__':
     main()
