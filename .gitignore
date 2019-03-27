@@ -107,9 +107,23 @@ venv.bak/
 
 # Project Specific
 ./saved_networks/
-dqn_logs/
 events.out.tfevents.*
 playground/snapshots/*.png
 playground/snapshots/archive
-ac_logs/
-a3c_logs/
+
+# Mac
+.DS_Store
+
+# Logs
+**/logs/a3c/
+**/logs/ac/
+**/logs/dqn/
+**/logs/pg/
+
+# Saved Networks
+**/saved_networks/a3c/
+**/saved_networks/ac/
+**/saved_networks/dqn/
+**/saved_networks/pg/
+
+!README.md

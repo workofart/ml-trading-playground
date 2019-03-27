@@ -53,6 +53,7 @@ class TradingEnv():
             
         self.episode_total_reward += reward
         self.time_step += 1
+
         return state, reward, done, {'marketValue': mv}
 
     def _get_obs(self, pos=None):
