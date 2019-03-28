@@ -10,7 +10,7 @@ TEST_EVERY_N_EPISODES = EPISODE / 10
 
 def main():
     with tf.Session() as sess:
-        env = TradingEnv(600, 100)
+        env = TradingEnv(300, 1000)
         agent = PG_Agent(env, sess)
         sess.run(tf.global_variables_initializer())
         for i in tqdm.tqdm(range(EPISODE)):

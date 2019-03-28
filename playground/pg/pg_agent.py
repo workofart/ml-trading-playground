@@ -43,6 +43,7 @@ class PG_Agent():
 
         # Logging
         self.writer = tf.summary.FileWriter('playground/logs/pg/' + RUN_COUNT)
+        self.writer.add_graph(self.sess.graph)
         tf.summary.scalar('Loss', self.loss)
         tf.summary.scalar('Mean Reward', self._mean_reward)
         self.write_op = tf.summary.merge_all()

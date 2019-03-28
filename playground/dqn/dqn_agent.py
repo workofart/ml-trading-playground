@@ -43,7 +43,6 @@ class DQN_Agent():
         self.session.run(tf.initializers.global_variables())
 
         # Tensorboard
-        # TODO: finish integrating run count into path
         self.summary_writer = tf.summary.FileWriter('logs/' + str(get_latest_run_count()))
         self.summary_writer.add_graph(self.session.graph)
 
