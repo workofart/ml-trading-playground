@@ -63,3 +63,13 @@ Double DQN Approach
 > 4. Do corrections as usual using that Q-value
 
 Were we to let Target Network select a best action, it could have very well selected some other index.
+
+
+#### Difference between Q-Learning and Policy Gradient
+The policy implied by Q-Learning is deterministic. This means that Q-Learning can’t learn stochastic policies, which can be useful in some environments. __It also means that we need to create our own exploration strategy since following the policy will not perform any exploration.__ We usually do this with ϵϵ-greedy exploration, which can be quite inefficient.
+
+There is no straightforward way to handle continuous actions in Q-Learning. In policy gradient, handling continous actions is relatively easy.
+
+As its name implies, in policy gradient we are following gradients with respect to the policy itself, which means we are constantly improving the policy. By contrast, in Q-Learning we are improving our estimates of the values of different actions, which only implicitely improves the policy. You would think that improving the policy directly would be more efficient, and indeed it very often is.
+
+Reference: https://towardsdatascience.com/an-intuitive-explanation-of-policy-gradient-part-1-reinforce-aa4392cbfd3c

@@ -18,7 +18,8 @@ class TradingEnv():
 
     def __init__(self, data_length, INIT_CASH):
         # Trading Params
-        self.portfolio = []
+        # self.portfolio = []
+        self.portfolio = 0
         self.INIT_CASH = INIT_CASH
         self.cash = self.INIT_CASH
 
@@ -34,8 +35,10 @@ class TradingEnv():
     def reset(self):
         self.episode_total_reward = 0
         self.time_step = 0
-        self.portfolio = []
+        # self.portfolio = [] 
+        self.portfolio = 0        
         self.cash = self.INIT_CASH
+        self.previous_portfolio = self.cash
         self.error_count = 0
         self.permitted_trades = []
         return self._get_obs()
@@ -43,7 +46,8 @@ class TradingEnv():
     def step(self, action, isTrain = False):
         done = False
         state = self._get_obs()
-        reward, mv = self.process_action(action, state)
+        # reward, mv = self.process_action(action, state)
+        reward, mv = self.process_action_plain(action, state) # No error penalty
 
         # Clip rewards between MIN_REWARD and MAX_REWARD
         # reward = max(MIN_REWARD, min(MAX_REWARD, reward))
@@ -97,6 +101,30 @@ class TradingEnv():
             reward -= 0.03
             self.error_count += 1
             self.permitted_trades.append(2)
+
+        # Previous reward should be the previous portfolio market value, not the difference
+        self.previous_portfolio = market_val
+        return reward, market_val
+    
+    def process_action_plain(self, action, state):
+        cur_price = state[0][2]
+        # Buy
+        if action == 0:
+            self.cash -= cur_price * (1+TXN_COST)
+            self.portfolio += 1
+        # Sell
+        elif action == 1:
+            self.cash += cur_price * (1-TXN_COST)
+            self.portfolio -= 1
+                
+        # Hold
+        elif action == 2:
+            self.cash = self.cash - HOLD_PENALTY
+            self.portfolio = self.portfolio
+
+        market_val = self.cash + cur_price * self.portfolio
+        
+        reward = market_val - self.previous_portfolio
 
         # Previous reward should be the previous portfolio market value, not the difference
         self.previous_portfolio = market_val

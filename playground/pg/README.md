@@ -8,3 +8,7 @@ Logs are stored in `playground/logs/pg`
 
 # Trained Models
 The checkpoints for trained models are stored in `playground/saved_networks/pg`
+
+
+# Challenges
+Not sure how to tweak the Gamma hyperparameter.

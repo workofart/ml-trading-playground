@@ -1,25 +1,21 @@
-from playground.utilities.utils import read_data, generate_datasets, plot_trades, plot_reward, get_latest_run_count
+from playground.utilities.utils import read_data, generate_datasets, plot_trades, plot_reward, get_latest_run_count, log_scalars
 import numpy as np, pandas as pd
-import os
+import os, tqdm
 import tensorflow as tf
 from playground.pg.pg_agent import PG_Agent
 from playground.env.trading_env import TradingEnv
 # ---------------------------------------------------------
-EPISODE = 1000 # Episode limitation
+EPISODE = 10000 # Episode limitation
 TEST_EVERY_N_EPISODES = EPISODE / 10
-BATCH_SIZE = 64 # size of minibatch
-TRAIN_EVERY_TIMESTEP = 500
 
 def main():
     with tf.Session() as sess:
-        env = TradingEnv(1000, 10)
+        env = TradingEnv(600, 100)
         agent = PG_Agent(env, sess)
         sess.run(tf.global_variables_initializer())
-        state = agent.env.reset() # To start the process
-    
-        for i in range(EPISODE):
+        for i in tqdm.tqdm(range(EPISODE)):
             done = False
-            state = agent.env.reset()
+            state = agent.env.reset() # To start the process
             agent.one_hot_actions.clear()
             agent.rewards.clear()
             agent.states.clear()
@@ -29,15 +25,9 @@ def main():
                 agent.rewards.append(reward)
                 agent.states.append(state)
                 agent.one_hot_actions.append(one_hot_action)
-
                 agent.discount_rewards()
 
-                # if len(agent.states) >= BATCH_SIZE and agent.env.time_step % TRAIN_EVERY_TIMESTEP == 0:
-            agent.train_pg_network(i, BATCH_SIZE)
-
-            # Update epsilon after every episode
-            if agent.isTrain is True and agent.epsilon > agent.FINAL_EPSILON:
-                agent.epsilon -= (1 - agent.FINAL_EPSILON) / (EPISODE/1.2)
+            agent.train_pg_network(i)
 
             # Summary after one EP, test and summarize the stats
             if i % TEST_EVERY_N_EPISODES == 0 and i >= 0:
@@ -63,7 +53,7 @@ def test(agent, i):
         state, reward, done, _ = agent.env.step(action)
         actions.append(action)
         reward_list.append(reward)
-    print('EP{0} | TEST | Avg Reward: {1}'.format(i, np.mean(reward_list)))
+    log_scalars(agent.writer, 'Test Mean Reward', np.mean(reward_list), i)
     plot_trades(i, prices, actions, None, name='PG_Test', path=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'pg', 'test_trades')))
     agent.isTrain = True
 

@@ -1,7 +1,7 @@
 import numpy as np, random
 from collections import deque
 import itertools, os, keras
-from playground.utilities.utils import get_latest_run_count
+from playground.utilities.utils import get_latest_run_count, log_scalars
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, Activation
@@ -11,30 +11,22 @@ from keras.losses import categorical_crossentropy
 from keras.utils import to_categorical
 
 # Hyper Parameters for PG
-GAMMA = 0.9 # discount factor for target Q 
-INITIAL_EPSILON = 1 # starting value of epsilon
-FINAL_EPSILON = 0.1 # final value of epsilon
-LEARNING_RATE = 1e-5
-TRAINING_EPOCHS = 5
+GAMMA = 0.99 # discount factor for target Q 
+LEARNING_RATE = 3e-4
 NEURONS_PER_DIM = 32
 
 SAVE_NETWORK_PER_N_EPISODES = 100
 SAVED_MODEL_PATH = 'playground/saved_networks/pg'
 SAVED_LOG_PATH = "playground/logs/pg"
 
-BUFFER_SIZE = 1000
-
 # Use the log folder to determine the run count to ensure logs and models are in sync
 RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
-# Vector Shapes
-INPUT_DIM = [1, 4]
+BUFFER_SIZE = 50000
 
 class PG_Agent():
 
     def __init__(self, env, sess):
         # init some parameters
-        self.epsilon = INITIAL_EPSILON
-        self.FINAL_EPSILON = FINAL_EPSILON
         self.sess = sess
         self.env = env
         self.state_dim = env.observation_space.shape[1]
@@ -73,7 +65,7 @@ class PG_Agent():
 
             with tf.name_scope('layer2'):
                 layer2 = tf.contrib.layers.fully_connected(inputs=layer1,
-                                                           num_outputs=self.action_dim,
+                                                           num_outputs=int(NEURONS_PER_DIM / 2),
                                                            activation_fn=tf.nn.relu,
                                                            weights_initializer=tf.contrib.layers.xavier_initializer())
 
@@ -96,12 +88,7 @@ class PG_Agent():
         self.network = self.action_output
         self.saver = tf.train.Saver()
     
-    def train_pg_network(self, ep, batch_size=32):
-        random_int = random.randint(0, len(self.states)-batch_size)
-        # state_batch = list(itertools.islice(self.states, random_int, random_int+batch_size))
-        # action_batch = list(itertools.islice(self.one_hot_actions, random_int, random_int+batch_size))
-        # reward_batch = list(itertools.islice(self.discounted_rewards, random_int, random_int+batch_size))
-
+    def train_pg_network(self, ep):
         loss, _ = self.sess.run([self.loss, self.train_opt], feed_dict={self._inputs: np.vstack(np.array(self.states)),
                                                     self._actions: np.vstack(np.array(self.one_hot_actions)),
                                                     self._discounted_rewards: np.vstack(np.array(self.discounted_rewards)),
@@ -113,11 +100,7 @@ class PG_Agent():
     def act(self, state):
         y = np.zeros([self.action_dim])
         pred_prob = self.sess.run(self.action_output, feed_dict={self._inputs:state.reshape([1,self.state_dim])})
-
-        if self.isTrain == True and random.random() < self.epsilon:
-            action = random.randint(0, 2)
-        else:
-            action = np.argmax(pred_prob)
+        action = np.random.choice(range(pred_prob.shape[1]), p=pred_prob.ravel())
         y[action] = 1
         return y, action # y is an one-hot array, action is the index selected
 
@@ -131,9 +114,6 @@ class PG_Agent():
         # Normalization
         mean = np.mean(reward_discounted)
         std = np.std(reward_discounted)
-        if std == 0:
-            discounted_norm_rewards = [0] # Initially when std = 0
-        else:
-            discounted_norm_rewards = (reward_discounted - mean) / std
-        
+        discounted_norm_rewards = (reward_discounted - mean) / (std + 1e-10) # don't divide by zero
+       
         self.discounted_rewards = discounted_norm_rewards
