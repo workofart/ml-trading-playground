@@ -12,7 +12,7 @@ from keras.utils import to_categorical
 
 # Hyper Parameters for PG
 GAMMA = 0.99 # discount factor for target Q 
-LEARNING_RATE = 3e-4
+LEARNING_RATE = 1e-3
 NEURONS_PER_DIM = 32
 
 SAVE_NETWORK_PER_N_EPISODES = 100

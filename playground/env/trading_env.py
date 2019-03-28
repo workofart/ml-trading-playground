@@ -5,7 +5,7 @@ from playground.utilities.utils import read_data, cleanup_logs, get_minute_data,
 
 
 # Trading Params
-HOLD_PENALTY = 0
+HOLD_PENALTY = 0.01
 # TXN_COST = 0.0005
 TXN_COST = 0
 REPEAT_TRADE_THRESHOLD = 15
