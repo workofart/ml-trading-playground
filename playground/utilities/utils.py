@@ -14,7 +14,8 @@ def read_data(filename, ticker, freq='raw'):
     if ticker:
         data = data[data['ticker'] == ticker]
     data['timestamp'] = pd.to_datetime(data.timestamp)
-    data = data[['high', 'low', 'price', 'volume', 'timestamp']].sort_values(by='timestamp')
+    # data = data[['high', 'low', 'price', 'volume', 'timestamp']].sort_values(by='timestamp')
+    data = data[['high', 'low', 'price', 'timestamp']].sort_values(by='timestamp') # Experimenting
     data = data.set_index('timestamp')
 
     if freq == 'm':

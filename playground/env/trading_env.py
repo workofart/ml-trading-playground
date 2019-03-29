@@ -122,13 +122,9 @@ class TradingEnv():
             self.cash = self.cash - HOLD_PENALTY
             self.portfolio = self.portfolio
 
-        market_val = self.cash + cur_price * self.portfolio
-        
-        reward = market_val - self.previous_portfolio
+        reward = self.cash + cur_price * self.portfolio
 
-        # Previous reward should be the previous portfolio market value, not the difference
-        self.previous_portfolio = market_val
-        return reward, market_val
+        return reward, 0
 
     def _avg_holding_price(self):
         if self._get_holding_stock_count() > 0:

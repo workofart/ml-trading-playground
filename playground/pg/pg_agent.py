@@ -21,7 +21,6 @@ SAVED_LOG_PATH = "playground/logs/pg"
 
 # Use the log folder to determine the run count to ensure logs and models are in sync
 RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
-BUFFER_SIZE = 50000
 
 class PG_Agent():
 
@@ -36,10 +35,10 @@ class PG_Agent():
         self.isTrain = True
         self.create_pg_network()
 
-        self.one_hot_actions = deque(maxlen=BUFFER_SIZE)
-        self.rewards = deque(maxlen=BUFFER_SIZE)
-        self.states = deque(maxlen=BUFFER_SIZE)
-        self.discounted_rewards = deque(maxlen=BUFFER_SIZE)
+        self.one_hot_actions = []
+        self.rewards = []
+        self.states = []
+        self.discounted_rewards = []
 
         # Logging
         self.writer = tf.summary.FileWriter('playground/logs/pg/' + RUN_COUNT)
@@ -66,31 +65,31 @@ class PG_Agent():
 
             with tf.name_scope('layer2'):
                 layer2 = tf.contrib.layers.fully_connected(inputs=layer1,
-                                                           num_outputs=int(NEURONS_PER_DIM / 2),
+                                                           num_outputs=self.action_dim,
                                                            activation_fn=tf.nn.relu,
                                                            weights_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.name_scope('layer3'):
                 layer3 = tf.contrib.layers.fully_connected(inputs=layer2,
                                                            num_outputs=self.action_dim,
-                                                           activation_fn=None,
+                                                           activation_fn=tf.nn.sigmoid,
                                                            weights_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.name_scope('softmax'):
                 self.action_output = tf.nn.softmax(layer3)
 
             with tf.name_scope('loss'):
-                neg_log_prob = tf.nn.softmax_cross_entropy_with_logits_v2(logits=layer3, labels=self._actions)
-                self.loss = tf.reduce_mean(neg_log_prob * self._discounted_rewards)
+                self.neg_log_prob = tf.nn.softmax_cross_entropy_with_logits_v2(logits=layer3, labels=self._actions)
+                self.loss = tf.reduce_mean(self.neg_log_prob * self._discounted_rewards)
             
             with tf.name_scope('train'):
-                self.train_opt = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
+                self.train_opt = tf.train.RMSPropOptimizer(LEARNING_RATE).minimize(self.loss)
 
         self.network = self.action_output
         self.saver = tf.train.Saver()
     
     def train_pg_network(self, ep):
-        loss, _ = self.sess.run([self.loss, self.train_opt], feed_dict={self._inputs: np.vstack(np.array(self.states)),
+        loss, neg_prob, _ = self.sess.run([self.loss, self.neg_log_prob, self.train_opt], feed_dict={self._inputs: np.vstack(np.array(self.states)),
                                                     self._actions: np.vstack(np.array(self.one_hot_actions)),
                                                     self._discounted_rewards: np.vstack(np.array(self.discounted_rewards)),
                                                     })
@@ -100,7 +99,8 @@ class PG_Agent():
 
     def act(self, state):
         y = np.zeros([self.action_dim])
-        pred_prob = self.sess.run(self.action_output, feed_dict={self._inputs:state.reshape([1,self.state_dim])})
+        pred_prob = self.sess.run(self.action_output, feed_dict={self._inputs:state})
+        # Stochastic Actions, we don't take argmax
         action = np.random.choice(range(pred_prob.shape[1]), p=pred_prob.ravel())
         y[action] = 1
         return y, action # y is an one-hot array, action is the index selected

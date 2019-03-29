@@ -5,20 +5,20 @@ import tensorflow as tf
 from playground.pg.pg_agent import PG_Agent
 from playground.env.trading_env import TradingEnv
 # ---------------------------------------------------------
-EPISODE = 10000 # Episode limitation
+EPISODE = 3000 # Episode limitation
 TEST_EVERY_N_EPISODES = EPISODE / 10
 
 def main():
     with tf.Session() as sess:
-        env = TradingEnv(300, 1000)
+        env = TradingEnv(300, 0)
         agent = PG_Agent(env, sess)
         sess.run(tf.global_variables_initializer())
         for i in tqdm.tqdm(range(EPISODE)):
             done = False
             state = agent.env.reset() # To start the process
-            agent.one_hot_actions.clear()
-            agent.rewards.clear()
-            agent.states.clear()
+            agent.one_hot_actions = []
+            agent.rewards = []
+            agent.states = []
             while done is False:
                 one_hot_action, action = agent.act(state)
                 state, reward, done, _ = agent.env.step(action, agent)
