@@ -5,7 +5,7 @@ from playground.utilities.utils import read_data, cleanup_logs, get_minute_data,
 
 
 # Trading Params
-HOLD_PENALTY = 0.01
+HOLD_PENALTY = 0
 # TXN_COST = 0.0005
 TXN_COST = 0
 REPEAT_TRADE_THRESHOLD = 15
@@ -46,7 +46,7 @@ class TradingEnv():
     def step(self, action, isTrain = False):
         done = False
         state = self._get_obs()
-        # reward, mv = self.process_action(action, state)
+        # reward, mv = self.process_action(action, state) # Complex reward function
         reward, mv = self.process_action_plain(action, state) # No error penalty
 
         # Clip rewards between MIN_REWARD and MAX_REWARD

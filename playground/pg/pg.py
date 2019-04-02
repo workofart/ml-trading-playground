@@ -1,18 +1,29 @@
 from playground.utilities.utils import read_data, generate_datasets, plot_trades, plot_reward, get_latest_run_count, log_scalars
 import numpy as np, pandas as pd
-import os, tqdm
+import os, tqdm, random
 import tensorflow as tf
 from playground.pg.pg_agent import PG_Agent
 from playground.env.trading_env import TradingEnv
 # ---------------------------------------------------------
-EPISODE = 3000 # Episode limitation
+EPISODE = 10000 # Episode limitation
 TEST_EVERY_N_EPISODES = EPISODE / 10
+DATA_LENGTH = 250
+INIT_CASH = 0
+LOAD_MODEL=False
+TEST_RUNS = 10 # Run test for N times to smooth out noise
+
+# Reproducibility
+SEED = 1992
+random.seed(SEED) # General level
+np.random.seed(SEED) # Epsilon-greedy level
+tf.set_random_seed(SEED) # Graph level
 
 def main():
+    tf.reset_default_graph()
     with tf.Session() as sess:
-        env = TradingEnv(300, 0)
-        agent = PG_Agent(env, sess)
-        sess.run(tf.global_variables_initializer())
+        # sess.run(tf.global_variables_initializer())
+        env = TradingEnv(DATA_LENGTH, INIT_CASH)
+        agent = PG_Agent(env, sess, SEED, LOAD_MODEL)
         for i in tqdm.tqdm(range(EPISODE)):
             done = False
             state = agent.env.reset() # To start the process
@@ -42,18 +53,21 @@ def main():
 
 def test(agent, i):
     agent.isTrain = False
-    state = agent.env.reset()
-    reward_list = []
-    actions = []
-    prices = []
-    done = False
-    while done is False:
-        prices.append(state[0][2])
-        one_hot_action, action = agent.act(state) # direct action for test
-        state, reward, done, _ = agent.env.step(action)
-        actions.append(action)
-        reward_list.append(reward)
-    log_scalars(agent.writer, 'Test Mean Reward', np.mean(reward_list), i)
+    test_reward_list = []
+    for run in range(TEST_RUNS):
+        state = agent.env.reset()
+        reward_list = []
+        actions = []
+        prices = []
+        done = False
+        while done is False:
+            prices.append(state[0][2])
+            one_hot_action, action = agent.act(state) # direct action for test
+            state, reward, done, _ = agent.env.step(action)
+            actions.append(action)
+            reward_list.append(reward)
+        test_reward_list.append(np.mean(reward_list))
+    log_scalars(agent.writer, 'Test Mean Reward', np.mean(test_reward_list), i)
     plot_trades(i, prices, actions, None, name='PG_Test', path=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'pg', 'test_trades')))
     agent.isTrain = True
 

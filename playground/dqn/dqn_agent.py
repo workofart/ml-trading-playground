@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import random
+import random, os
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
 from playground.dqn.experience_buffer import Experience_Buffer
@@ -10,17 +10,15 @@ from playground.utilities.utils import variable_summaries, get_latest_run_count,
 LEARNING_RATE = 5e-6
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.05 # ending value of epislon
-DECAY = 0.993 # epsilon decay
 GAMMA = 0.95 # discount factor for q value
-UPDATE_TARGET_NETWORK = 10
-SAVE_NETWORK = 50
 
 SAVED_MODEL_PATH = "playground/saved_networks/dqn"
-SAVED_LOG_PATH = "playground/logs/dqn"
+SAVED_LOG_PATH = "playground/logs/dqn/"
+RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
 
 class DQN_Agent():
 
-    def __init__(self, env, isTrain = True, isLoad = False):
+    def __init__(self, env, eps, isTrain = True, isLoad = False, seed=0):
         # init some parameters
         self.epsilon = INITIAL_EPSILON
         self.final_epsilon = FINAL_EPSILON
@@ -30,20 +28,21 @@ class DQN_Agent():
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.learning_rate = LEARNING_RATE
-        self.update_target_net_freq = UPDATE_TARGET_NETWORK # how many timesteps to update target network params
+        self.total_episodes = eps
+        self.update_target_net_freq = min(10, int(self.total_episodes / 10)) # how many timesteps to update target network params
         self.is_updated_target_net = False
 
         # Reset the graph
         tf.reset_default_graph()
-        self.network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'q_network')
-        self.target_network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'target_q_network')
+        self.network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'q_network', seed=seed)
+        self.target_network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'target_q_network', seed=seed)
 
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initializers.global_variables())
 
         # Tensorboard
-        self.summary_writer = tf.summary.FileWriter('logs/' + str(get_latest_run_count()))
+        self.summary_writer = tf.summary.FileWriter(os.path.join(SAVED_LOG_PATH,RUN_COUNT))
         self.summary_writer.add_graph(self.session.graph)
 
         # loading networks
@@ -51,10 +50,10 @@ class DQN_Agent():
         self.saver = tf.train.Saver()
         checkpoint = tf.train.get_checkpoint_state(SAVED_MODEL_PATH)
         if (self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path) or isLoad is True:
-                self.saver.restore(self.session, checkpoint.model_checkpoint_path)
-                print("Successfully loaded:", checkpoint.model_checkpoint_path)
+            self.saver.restore(self.session, checkpoint.model_checkpoint_path)
+            print("Successfully loaded:", checkpoint.model_checkpoint_path)
         else:
-                print("Could not find old network weights")
+            print("Could not find old network weights")
 
         
     def update_target_q_net_if_needed(self, step):
@@ -70,10 +69,10 @@ class DQN_Agent():
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
         replay_samples = self.replay_buffer.sample(batch_size)
 
-        state_batch = np.reshape([data[0] for data in replay_samples], (batch_size, 4))
+        state_batch = np.reshape([data[0] for data in replay_samples], (batch_size, self.state_dim))
         action_batch = np.reshape([data[1] for data in replay_samples], (batch_size, self.action_dim))
         reward_batch = np.reshape([data[2] for data in replay_samples], (batch_size, 1))
-        next_state_batch = np.reshape([data[3] for data in replay_samples], (batch_size, 4))
+        next_state_batch = np.reshape([data[3] for data in replay_samples], (batch_size, self.state_dim))
 
         # Get the Target Q-value for the next state using the target network,
         # by making a second forward-prop
@@ -105,21 +104,19 @@ class DQN_Agent():
         self.summary_writer.add_summary(summary, ep)
 
         # save network 9 times per episode
-        if ep % SAVE_NETWORK == 0:
-            self.saver.save(self.session, SAVED_MODEL_PATH + 'network-dqn', global_step = ep)
+        if ep % (self.total_episodes / 10) == 0:
+            model_dir = os.path.join(SAVED_MODEL_PATH, RUN_COUNT)
+            self.saver.save(self.session, model_dir + '/network-dqn', global_step = ep)
 
         return c
 
 
     def act(self, state):
-        # if self.isTrain is True and self.epsilon > FINAL_EPSILON:
-            # self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / self.env.data_length
-
         if self.isTrain is True and random.random() <= self.epsilon:
             return random.randint(0, self.action_dim - 1)
         else:
             output = self.network.output.eval(feed_dict = {
-			self.network.state_input:state
+			    self.network.state_input:state
 			})[0]
             action = np.argmax(output)
             return action

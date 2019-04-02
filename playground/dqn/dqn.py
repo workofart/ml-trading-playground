@@ -1,29 +1,28 @@
-from playground.utilities.utils import read_data, generate_datasets, plot_trades, log_histogram, log_scalars
-import numpy as np, pandas as pd, random
+from playground.utilities.utils import read_data, generate_datasets, plot_trades, log_histogram, log_scalars, get_latest_run_count
+import numpy as np, pandas as pd, random, os
 import tensorflow as tf
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 from playground.dqn.dqn_agent import DQN_Agent
 from playground.env.trading_env import TradingEnv
 
-EPISODE = 3000 # Episode limitation
-TRAIN_EVERY_STEPS = 16
-TEST_EVERY_EP = 100
+SAVED_LOG_PATH = "playground/logs/dqn"
+EPISODE = 10000 # Episode limitation
 BATCH_SIZE = 32 # size of minibatch
 DATA_LENGTH = 250 # How many times steps to use in the data
+RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
 
-INIT_CASH = 100
+INIT_CASH = 0
 
-# reproducible
-random.seed(1992)
-np.random.seed(1992)
-tf.set_random_seed(1992)
+# Reproducibility
+SEED = 1992
+random.seed(SEED) # General level
+np.random.seed(SEED) # Epsilon-greedy level
+tf.set_random_seed(SEED) # Graph level
 
 def main(isLoad=False):
     env = TradingEnv(data_length=DATA_LENGTH, INIT_CASH=INIT_CASH)
-    agent = DQN_Agent(env, isLoad=isLoad)
-    # plt.ion()
-    # plt.show()
+    agent = DQN_Agent(env, EPISODE, isLoad=isLoad, seed=SEED)
     for i in tqdm(range(EPISODE)):
         agent.isTrain = True
         agent.is_updated_target_net = False
@@ -40,7 +39,7 @@ def main(isLoad=False):
             if done is False:
                 next_state = agent.env._get_obs() # Get the next state
                 agent.perceive(state, action, reward, next_state, done)
-                if agent.replay_buffer.size() > BATCH_SIZE and env.time_step % TRAIN_EVERY_STEPS == 0:
+                if agent.replay_buffer.size() > BATCH_SIZE and env.time_step % int(DATA_LENGTH / 10) == 0:
                     agent.train_dqn_network(i, batch_size=BATCH_SIZE)
         # Update epsilon after every episode
         if agent.isTrain is True and agent.epsilon > agent.final_epsilon:
@@ -53,7 +52,7 @@ def main(isLoad=False):
         # print('# Buys: {} | {}'.format(str(actions_list.count(0)), (actions_list.count(0)/len(actions_list))))
         # print('# Sells: {} | {}'.format(str(actions_list.count(1)), (actions_list.count(1)/len(actions_list))))
         # print('# Holds: {} | {}'.format(str(actions_list.count(2)), (actions_list.count(2)/len(actions_list))))
-        if i % TEST_EVERY_EP == 0 and i > 0:
+        if i % int(EPISODE / 10) == 0 and i > 0:
             test(agent, i)
 
 def test(agent, ep = 0):
@@ -67,7 +66,7 @@ def test(agent, ep = 0):
         action = agent.act(state)
         actions.append(action)
         state, reward, done, _ = agent.env.step(action)
-    plot_trades(ep, prices, actions, agent.env.permitted_trades)
+    plot_trades(ep, prices, actions, agent.env.permitted_trades, path=os.path.join(SAVED_LOG_PATH, RUN_COUNT))
 
 
 

@@ -11,9 +11,9 @@ from keras.losses import categorical_crossentropy
 from keras.utils import to_categorical
 
 # Hyper Parameters for PG
-GAMMA = 0.99 # discount factor for target Q 
+GAMMA = 0.999999954 # discount factor for target Q 
 LEARNING_RATE = 1e-3
-NEURONS_PER_DIM = 32
+NEURONS_PER_DIM = 64
 
 SAVE_NETWORK_PER_N_EPISODES = 100
 SAVED_MODEL_PATH = 'playground/saved_networks/pg'
@@ -24,8 +24,9 @@ RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
 
 class PG_Agent():
 
-    def __init__(self, env, sess):
+    def __init__(self, env, sess, seed=0, isLoad=False):
         # init some parameters
+        self.seed = seed
         self.sess = sess
         self.env = env
         self.state_dim = env.observation_space.shape[1]
@@ -33,7 +34,9 @@ class PG_Agent():
         self.state_input = np.zeros((1, self.state_dim))
         self.y_input = np.zeros((1, self.action_dim))
         self.isTrain = True
+        self.isLoad = isLoad        
         self.create_pg_network()
+        sess.run(tf.global_variables_initializer())
 
         self.one_hot_actions = []
         self.rewards = []
@@ -57,36 +60,46 @@ class PG_Agent():
             # Add this placeholder for having this variable in tensorboard
             self._mean_reward = tf.placeholder(tf.float32 , name="mean_reward")
 
-            with tf.name_scope('layer1'):
-                layer1 = tf.contrib.layers.fully_connected(inputs=self._inputs,
-                                                           num_outputs=NEURONS_PER_DIM,
-                                                           activation_fn=tf.nn.relu,
-                                                           weights_initializer=tf.contrib.layers.xavier_initializer())
+        with tf.name_scope('layer1'):
+            layer1 = tf.contrib.layers.fully_connected(inputs=self._inputs,
+                                                        num_outputs=NEURONS_PER_DIM,
+                                                        activation_fn=tf.nn.elu,
+                                                        weights_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
 
-            with tf.name_scope('layer2'):
-                layer2 = tf.contrib.layers.fully_connected(inputs=layer1,
-                                                           num_outputs=self.action_dim,
-                                                           activation_fn=tf.nn.relu,
-                                                           weights_initializer=tf.contrib.layers.xavier_initializer())
+        with tf.name_scope('layer2'):
+            layer2 = tf.contrib.layers.fully_connected(inputs=layer1,
+                                                        num_outputs=int(NEURONS_PER_DIM / 2),
+                                                        activation_fn=tf.nn.elu,
+                                                        weights_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
 
-            with tf.name_scope('layer3'):
-                layer3 = tf.contrib.layers.fully_connected(inputs=layer2,
-                                                           num_outputs=self.action_dim,
-                                                           activation_fn=tf.nn.sigmoid,
-                                                           weights_initializer=tf.contrib.layers.xavier_initializer())
+        with tf.name_scope('layer3'):
+            layer3 = tf.contrib.layers.fully_connected(inputs=layer2,
+                                                        num_outputs=self.action_dim,
+                                                        activation_fn=tf.nn.elu,
+                                                        weights_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed))
+        
 
-            with tf.name_scope('softmax'):
-                self.action_output = tf.nn.softmax(layer3)
+        with tf.name_scope('softmax'):
+            self.action_output = tf.nn.softmax(layer3)
 
-            with tf.name_scope('loss'):
-                self.neg_log_prob = tf.nn.softmax_cross_entropy_with_logits_v2(logits=layer3, labels=self._actions)
-                self.loss = tf.reduce_mean(self.neg_log_prob * self._discounted_rewards)
-            
-            with tf.name_scope('train'):
-                self.train_opt = tf.train.RMSPropOptimizer(LEARNING_RATE).minimize(self.loss)
+        with tf.name_scope('loss'):
+            self.neg_log_prob = tf.nn.softmax_cross_entropy_with_logits_v2(logits=layer3, labels=self._actions)
+            self.loss = tf.reduce_mean(self.neg_log_prob * self._discounted_rewards)
+        
+        with tf.name_scope('train'):
+            optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
+            grads = optimizer.compute_gradients(self.loss)
+            capped_grads = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in grads]
+            self.train_opt = optimizer.apply_gradients(capped_grads)
 
-        self.network = self.action_output
         self.saver = tf.train.Saver()
+        model_dir = os.path.join(SAVED_MODEL_PATH, str(int(RUN_COUNT) - 1))
+        checkpoint = tf.train.get_checkpoint_state(model_dir)
+        if (self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path) or self.isLoad is True:
+            self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
+            print("Successfully loaded:", checkpoint.model_checkpoint_path)
+        else:
+            print("Could not find old network weights")            
     
     def train_pg_network(self, ep):
         loss, neg_prob, _ = self.sess.run([self.loss, self.neg_log_prob, self.train_opt], feed_dict={self._inputs: np.vstack(np.array(self.states)),

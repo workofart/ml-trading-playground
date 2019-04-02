@@ -13,7 +13,7 @@ dropout = 0.03 # dropout
 
 class DQN_NNET:
 
-    def __init__(self, state_dim, action_dim, learning_rate, name):
+    def __init__(self, state_dim, action_dim, learning_rate, name, seed=1992):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.learning_rate = learning_rate
@@ -31,24 +31,27 @@ class DQN_NNET:
             self.W1 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.random_normal([self.state_dim, NN1_NEURONS],
                                 dtype=tf.float64,
+                                seed=seed,
                                 name='W1'))
             self.B1 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([NN1_NEURONS], tf.float64),
                                 name='B1')
-            self.layer1 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.state_input, self.W1), self.B1)), keep_prob=(1-dropout), name='layer1_dropout')
+            self.layer1 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.state_input, self.W1), self.B1)), keep_prob=(1-dropout), name='layer1_dropout', seed=seed)
 
             self.W2 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.random_normal([NN1_NEURONS, NN2_NEURONS],
                                 dtype=tf.float64,
+                                seed=seed,
                                 name='W2'))
             self.B2 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([NN2_NEURONS], tf.float64),
                                 name='B2')
-            self.layer2 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.layer1, self.W2), self.B2)), keep_prob=(1-dropout), name='layer2_dropout')
+            self.layer2 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.layer1, self.W2), self.B2)), keep_prob=(1-dropout), name='layer2_dropout', seed=seed)
 
             self.W_O = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.random_normal([NN2_NEURONS, self.action_dim],
                                 dtype=tf.float64,
+                                seed=seed,
                                 name='W_Output'))
             self.B_O = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([self.action_dim], tf.float64),

@@ -100,7 +100,7 @@ def plot_trades(EP, prices, actions, permitted_trades=None, name='', path=None):
     plt.xlabel('Timesteps')
     plt.title('Agent\'s Intended Actions')
     # Permitted Trades
-    if permitted_trades is not None:
+    if permitted_trades is not None and len(permitted_trades) != 0:
         plt.subplot(2,1,2)
         plt.plot(prices, linewidth=1, color='#808080')
         p_buys, p_sells = get_buys_sells(permitted_trades)
