@@ -5,8 +5,8 @@ import tensorflow as tf
 from playground.pg.pg_agent import PG_Agent
 from playground.env.trading_env import TradingEnv
 # ---------------------------------------------------------
-EPISODE = 10000 # Episode limitation
-TEST_EVERY_N_EPISODES = EPISODE / 10
+EPISODE = 50000 # Episode limitation
+TEST_EVERY_N_EPISODES = EPISODE / 100
 DATA_LENGTH = 250
 INIT_CASH = 0
 LOAD_MODEL=False
@@ -21,7 +21,6 @@ tf.set_random_seed(SEED) # Graph level
 def main():
     tf.reset_default_graph()
     with tf.Session() as sess:
-        # sess.run(tf.global_variables_initializer())
         env = TradingEnv(DATA_LENGTH, INIT_CASH)
         agent = PG_Agent(env, sess, SEED, LOAD_MODEL)
         for i in tqdm.tqdm(range(EPISODE)):
@@ -68,7 +67,8 @@ def test(agent, i):
             reward_list.append(reward)
         test_reward_list.append(np.mean(reward_list))
     log_scalars(agent.writer, 'Test Mean Reward', np.mean(test_reward_list), i)
-    plot_trades(i, prices, actions, None, name='PG_Test', path=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'pg', 'test_trades')))
+    if (i % int(EPISODE / 10)) == 0:
+        plot_trades(i, prices, actions, None, name='PG_Test', path=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'pg', 'test_trades')))
     agent.isTrain = True
 
 if __name__ == '__main__':
