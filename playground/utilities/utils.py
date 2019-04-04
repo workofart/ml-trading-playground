@@ -76,6 +76,10 @@ def evaluate_result(pred, x, y, mode):
     plt.show()
 
 def plot_trades(EP, prices, actions, permitted_trades=None, name='', path=None):
+    if permitted_trades is None:
+        num_plots = 1
+    else:
+        num_plots = 2
     def get_buys_sells(actions):
         buys, sells = {}, {}
         buys['x'] = []
@@ -91,7 +95,7 @@ def plot_trades(EP, prices, actions, permitted_trades=None, name='', path=None):
                 sells['y'].append(prices[i])
         return buys, sells
     plt.clf()
-    plt.subplot(2,1,1)
+    plt.subplot(num_plots,1,1)
     plt.plot(prices, linewidth=1, color='#808080')
     buys, sells = get_buys_sells(actions)
     plt.plot(buys['x'], buys['y'], '.', markersize=2, color='g')
@@ -108,7 +112,7 @@ def plot_trades(EP, prices, actions, permitted_trades=None, name='', path=None):
         plt.plot(p_sells['x'], p_sells['y'], '.', markersize=2, color='r')
         plt.ylabel('Prices')
         plt.xlabel('Timesteps')
-        plt.title('Agent\'s Permitted Actions (Actual Trades)')
+        plt.title('Permitted Actions')
     if path == None:
         path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logs', str(get_latest_run_count() - 1), 'test_trades'))
     if os.path.isdir(path) is False:
@@ -251,3 +255,23 @@ def update_target_graph(from_scope, to_scope):
     for from_var,to_var in zip(from_vars,to_vars):
         op_holder.append(to_var.assign(from_var))
     return op_holder
+
+def test_trades(agent, i, plot_path, runs=1, plot_freq=10):
+    agent.isTrain = False
+    test_reward_list = []
+    for run in range(int(runs)):
+        state = agent.env.reset()
+        reward_list = []
+        actions = []
+        prices = []
+        done = False
+        while done is False:
+            prices.append(state[0][2])
+            action = agent.act(state) # direct action for test
+            state, reward, done, _ = agent.env.step(action)
+            actions.append(action)
+            reward_list.append(reward)
+        test_reward_list.append(np.mean(reward_list))
+    log_scalars(agent.summary_writer, 'Test Mean Reward', np.mean(test_reward_list), i)
+    if i % plot_freq == 0:
+        plot_trades(i, prices, actions, agent.env.permitted_trades, path=plot_path)

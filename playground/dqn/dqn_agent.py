@@ -7,10 +7,10 @@ from playground.dqn.experience_buffer import Experience_Buffer
 from playground.utilities.utils import variable_summaries, get_latest_run_count, update_target_graph
 
 # Hyper Parameters for DQN
-LEARNING_RATE = 5e-6
+LEARNING_RATE = 1e-5
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.05 # ending value of epislon
-GAMMA = 0.95 # discount factor for q value
+GAMMA = 0.99 # discount factor for q value
 
 SAVED_MODEL_PATH = "playground/saved_networks/dqn"
 SAVED_LOG_PATH = "playground/logs/dqn/"
@@ -24,12 +24,14 @@ class DQN_Agent():
         self.final_epsilon = FINAL_EPSILON
         self.env = env
         self.isTrain = isTrain
+        self.seed = seed
         self.replay_buffer = Experience_Buffer()
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.learning_rate = LEARNING_RATE
         self.total_episodes = eps
-        self.update_target_net_freq = min(10, int(self.total_episodes / 10)) # how many timesteps to update target network params
+        # self.update_target_net_freq = max(5, int(self.total_episodes / 100)) # how many episodes to update target network params
+        self.update_target_net_freq = 3 # how many episodes to update target network params
         self.is_updated_target_net = False
 
         # Reset the graph
@@ -46,9 +48,9 @@ class DQN_Agent():
         self.summary_writer.add_graph(self.session.graph)
 
         # loading networks
-        # TODO: finish integrating run count into path
         self.saver = tf.train.Saver()
-        checkpoint = tf.train.get_checkpoint_state(SAVED_MODEL_PATH)
+        model_dir = os.path.join(SAVED_MODEL_PATH, str(int(RUN_COUNT) - 1))
+        checkpoint = tf.train.get_checkpoint_state(model_dir)
         if (self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path) or isLoad is True:
             self.saver.restore(self.session, checkpoint.model_checkpoint_path)
             print("Successfully loaded:", checkpoint.model_checkpoint_path)
@@ -56,8 +58,8 @@ class DQN_Agent():
             print("Could not find old network weights")
 
         
-    def update_target_q_net_if_needed(self, step):
-        if step % self.update_target_net_freq == 0 and step > 0 and self.is_updated_target_net is False:
+    def update_target_q_net_if_needed(self, ep):
+        if ep % self.update_target_net_freq == 0 and ep > 0 and self.is_updated_target_net is False:
             op_holder = update_target_graph("q_network", "target_q_network")
             self.session.run(op_holder)
 

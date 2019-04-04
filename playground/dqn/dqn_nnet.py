@@ -13,7 +13,7 @@ dropout = 0.03 # dropout
 
 class DQN_NNET:
 
-    def __init__(self, state_dim, action_dim, learning_rate, name, seed=1992):
+    def __init__(self, state_dim, action_dim, learning_rate, name, seed=0):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.learning_rate = learning_rate
@@ -61,8 +61,6 @@ class DQN_NNET:
             self.Q_value = tf.reduce_sum(tf.multiply(self.output, self.action_input), axis=1, name='Q_value')
 
             # Cost
-            # self.cost = tf.reduce_mean(tf.square(self.Q_input - tf.reduce_sum(
-                # self.output * self.action_input)), reduction_indices=1)
             self.cost = tf.reduce_mean(tf.square(self.Q_input - self.Q_value))
 
             # L2 Regularization

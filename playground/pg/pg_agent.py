@@ -44,8 +44,8 @@ class PG_Agent():
         self.discounted_rewards = []
 
         # Logging
-        self.writer = tf.summary.FileWriter('playground/logs/pg/' + RUN_COUNT)
-        self.writer.add_graph(self.sess.graph)
+        self.summary_writer = tf.summary.FileWriter('playground/logs/pg/' + RUN_COUNT)
+        self.summary_writer.add_graph(self.sess.graph)
         tf.summary.scalar('Loss', self.loss)
         tf.summary.scalar('Mean Reward', self._mean_reward)
         self.write_op = tf.summary.merge_all()
@@ -121,7 +121,7 @@ class PG_Agent():
         # Stochastic Actions, we don't take argmax
         action = np.random.choice(range(pred_prob.shape[1]), p=pred_prob.ravel())
         y[action] = 1
-        return y, action # y is an one-hot array, action is the index selected
+        return action, y # y is an one-hot array, action is the index selected
 
     def discount_rewards(self):
         reward_discounted = np.zeros_like(self.rewards)

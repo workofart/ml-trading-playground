@@ -13,13 +13,13 @@ REPEAT_TRADE_THRESHOLD = 15
 # Reward
 MIN_REWARD = -2
 MAX_REWARD = 2
+ERROR_COST = 0.005
 
 class TradingEnv():
 
     def __init__(self, data_length, INIT_CASH):
         # Trading Params
-        # self.portfolio = []
-        self.portfolio = 0
+        self.portfolio = []
         self.INIT_CASH = INIT_CASH
         self.cash = self.INIT_CASH
 
@@ -35,8 +35,7 @@ class TradingEnv():
     def reset(self):
         self.episode_total_reward = 0
         self.time_step = 0
-        # self.portfolio = [] 
-        self.portfolio = 0        
+        self.portfolio = [] 
         self.cash = self.INIT_CASH
         self.previous_portfolio = self.cash
         self.error_count = 0
@@ -46,8 +45,8 @@ class TradingEnv():
     def step(self, action, isTrain = False):
         done = False
         state = self._get_obs()
-        # reward, mv = self.process_action(action, state) # Complex reward function
-        reward, mv = self.process_action_plain(action, state) # No error penalty
+        reward, mv = self.process_action(action, state) # Complex reward function
+        # reward, mv = self.process_action_plain(action, state) # No error penalty
 
         # Clip rewards between MIN_REWARD and MAX_REWARD
         # reward = max(MIN_REWARD, min(MAX_REWARD, reward))
@@ -75,7 +74,6 @@ class TradingEnv():
                 error = True
             else:
                 self.cash -= cur_price * (1+TXN_COST)# buy with current price of current state
-                # self.portfolio += 1
                 self.portfolio.append(cur_price)
                 self.permitted_trades.append(0)
         # Sell
@@ -98,7 +96,7 @@ class TradingEnv():
         reward = book_val + (market_val - self.previous_portfolio)
 
         if error:
-            reward -= 0.03
+            reward -= ERROR_COST
             self.error_count += 1
             self.permitted_trades.append(2)
 

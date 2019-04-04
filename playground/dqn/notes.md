@@ -73,3 +73,26 @@ There is no straightforward way to handle continuous actions in Q-Learning. In p
 As its name implies, in policy gradient we are following gradients with respect to the policy itself, which means we are constantly improving the policy. By contrast, in Q-Learning we are improving our estimates of the values of different actions, which only implicitely improves the policy. You would think that improving the policy directly would be more efficient, and indeed it very often is.
 
 Reference: https://towardsdatascience.com/an-intuitive-explanation-of-policy-gradient-part-1-reinforce-aa4392cbfd3c
+
+#### Gradient Clipping
+```
+optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
+grads = optimizer.compute_gradients(self.loss)
+capped_grads = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in grads]
+self.train_opt = optimizer.apply_gradients(capped_grads)
+```
+
+#### Dying ReLU Neuron
+Reference: https://datascience.stackexchange.com/questions/5706/what-is-the-dying-relu-problem-in-neural-networks
+
+A "dead" ReLU always outputs the same value (zero as it happens, but that is not important) for any input. Probably this is arrived at by learning a large negative bias term for its weights.
+
+In turn, that means that it takes no role in discriminating between inputs. For classification, you could visualise this as a decision plane outside of all possible input data.
+
+Once a ReLU ends up in this state, it is unlikely to recover, because the function gradient at 0 is also 0, so gradient descent learning will not alter the weights. "Leaky" ReLUs with a small positive gradient for negative inputs (y=0.01x when x < 0 say) are one attempt to address this issue and give a chance to recover.
+
+The sigmoid and tanh neurons can suffer from similar problems as their values saturate, but there is always at least a small gradient allowing them to recover in the long term.
+
+## TODO
+
+Find a way to build in the portfolio and cash amount into the states. The tricky part is that for double DQN, you need the next state for the target network to work properly.
