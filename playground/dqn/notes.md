@@ -12,7 +12,18 @@
 
 - I've been seeing, after 3000 episodes of training, the reward function following a sine-way like function and I suspect it has something to do with epsilon. I think it makes sense to update epsilon after every episode, as opposed to after every timestep, because timestep 0 and timestep n doesn't really mean anything for exploration and exploitation, but episode 0 and episode 1000 means a lot, the latter will more likely have a better trained model and thus require less for exploration and more for exploitation.
 
+- Don't nest copying the target network into the training code block because if the training is not done after every timestep, but the copying of the target network is based on timesteps, so there is a possibility that the copying of the network will not get triggered frequently as defined. 
+
 ## FAQ
+
+#### Difference between `tf.Variable()` and `tf.get_variable()`
+I can find two main differences between one and the other:
+First is that tf.Variable will always create a new variable, whether `tf.get_variable` gets from the graph an existing variable with those parameters, and if it does not exists, it creates a new one.
+`tf.Variable` requires that an initial value be specified.
+It is important to clarify that the function tf.get_variable prefixes the name with the current variable scope to perform reuse checks.
+
+Reference: https://stackoverflow.com/questions/37098546/difference-between-variable-and-get-variable-in-tensorflow
+
 
 #### Tensorboard Summaries raising placeholder type mismatch error
 The merged summary merged = tf.merge_all_summaries() is taking into account previous summaries (coming from I don't know where), which depend on placeholders not initialized.
@@ -81,6 +92,9 @@ grads = optimizer.compute_gradients(self.loss)
 capped_grads = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in grads]
 self.train_opt = optimizer.apply_gradients(capped_grads)
 ```
+
+#### Clipping Q-Values
+The problem with the current approach is that the Q-values are initially sparsed out across the 3 actions, and during training, the q-values all increase which results in nothing learned. This is because the best action will always be the action with the highest initialized q-value. After clipping q-values between -1 and 1, the q-values tend to converge around 0 and 1
 
 #### Dying ReLU Neuron
 Reference: https://datascience.stackexchange.com/questions/5706/what-is-the-dying-relu-problem-in-neural-networks

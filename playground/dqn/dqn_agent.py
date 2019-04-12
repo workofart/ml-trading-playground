@@ -4,13 +4,15 @@ import random, os
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
 from playground.dqn.experience_buffer import Experience_Buffer
-from playground.utilities.utils import variable_summaries, get_latest_run_count, update_target_graph
+from playground.utilities.utils import variable_summaries, get_latest_run_count, update_target_graph, log_scalars
 
 # Hyper Parameters for DQN
 LEARNING_RATE = 1e-5
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.05 # ending value of epislon
+EPSILON_DECAY = 1e-7
 GAMMA = 0.99 # discount factor for q value
+UPDATE_TARGET_GRAPH_FREQ = 4000 # how many timesteps to update target network params
 
 SAVED_MODEL_PATH = "playground/saved_networks/dqn"
 SAVED_LOG_PATH = "playground/logs/dqn/"
@@ -23,15 +25,16 @@ class DQN_Agent():
         self.epsilon = INITIAL_EPSILON
         self.final_epsilon = FINAL_EPSILON
         self.env = env
+        self.total_episodes = eps
         self.isTrain = isTrain
         self.seed = seed
         self.replay_buffer = Experience_Buffer()
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
         self.learning_rate = LEARNING_RATE
-        self.total_episodes = eps
-        # self.update_target_net_freq = max(5, int(self.total_episodes / 100)) # how many episodes to update target network params
-        self.update_target_net_freq = 3 # how many episodes to update target network params
+        self.current_episode = 0
+        self.accum_steps = 0
+        
         self.is_updated_target_net = False
 
         # Reset the graph
@@ -42,6 +45,10 @@ class DQN_Agent():
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initializers.global_variables())
+
+        # Update target graph with main graph
+        self.update_q_network_op_holder = update_target_graph("q_network", "target_q_network")
+        self.session.run(self.update_q_network_op_holder)
 
         # Tensorboard
         self.summary_writer = tf.summary.FileWriter(os.path.join(SAVED_LOG_PATH,RUN_COUNT))
@@ -58,16 +65,14 @@ class DQN_Agent():
             print("Could not find old network weights")
 
         
-    def update_target_q_net_if_needed(self, ep):
-        if ep % self.update_target_net_freq == 0 and ep > 0 and self.is_updated_target_net is False:
-            op_holder = update_target_graph("q_network", "target_q_network")
-            self.session.run(op_holder)
+    def update_target_q_net_if_needed(self):
+        if self.accum_steps % UPDATE_TARGET_GRAPH_FREQ == 0 and self.accum_steps > 0 and self.is_updated_target_net is False:
+            self.session.run(self.update_q_network_op_holder)
 
             self.is_updated_target_net = True
             # print('Timesteps:{} | Target Q-network has been updated.'.format(self.env.time_step))
 
-    def train_dqn_network(self, ep, batch_size=32):
-        self.update_target_q_net_if_needed(ep)
+    def train_dqn_network(self, batch_size=32):
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
         replay_samples = self.replay_buffer.sample(batch_size)
 
@@ -94,32 +99,42 @@ class DQN_Agent():
                 y_batch.append(reward_batch[i])
             else:
                 y_batch.append(max(-1, min(reward_batch[i] + GAMMA * target_q_val_batch[i][action], 1)))
+                # y_batch.append(reward_batch[i] + GAMMA * target_q_val_batch[i][action])
 
         # Train on one batch on the Q-network
         _, c, summary = self.session.run([self.network.optimizer, self.network.cost, self.network.merged_summary],
                             feed_dict={
-                                self.network.Q_input: np.reshape(y_batch, (batch_size, 1)),
+                                self.network.Q_target: np.reshape(y_batch, (batch_size, 1)),
                                 self.network.action_input: action_batch,
                                 self.network.state_input: state_batch
                             }
         )
-        self.summary_writer.add_summary(summary, ep)
+
+        self.summary_writer.add_summary(summary, self.current_episode)
 
         # save network 9 times per episode
-        if ep % (self.total_episodes / 10) == 0:
+        if self.current_episode % (self.total_episodes / 10) == 0:
             model_dir = os.path.join(SAVED_MODEL_PATH, RUN_COUNT)
-            self.saver.save(self.session, model_dir + '/network-dqn', global_step = ep)
+            self.saver.save(self.session, model_dir + '/network-dqn', global_step = self.current_episode)
 
         return c
 
 
     def act(self, state):
+        if self.isTrain is True:
+            self.epsilon = self.final_epsilon + (1 - self.final_epsilon) * np.exp(-EPSILON_DECAY * self.accum_steps)
+            # if self.accum_steps % 500 == 0:
+                # log_scalars(self.summary_writer, 'epsilon', self.epsilon, self.accum_steps)
         if self.isTrain is True and random.random() <= self.epsilon:
             return random.randint(0, self.action_dim - 1)
         else:
             output = self.network.output.eval(feed_dict = {
 			    self.network.state_input:state
 			})[0]
+            if self.current_episode % 50 == 0:
+                log_scalars(self.summary_writer, 'output_buy', output[0], self.accum_steps)
+                log_scalars(self.summary_writer, 'output_sell', output[1], self.accum_steps)
+                log_scalars(self.summary_writer, 'output_hold', output[2], self.accum_steps)
             action = np.argmax(output)
             return action
 

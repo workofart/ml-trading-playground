@@ -6,8 +6,8 @@ from playground.utilities.utils import variable_summaries
 # NN Parameters
 NN1_NEURONS = 32
 NN2_NEURONS = 16
-beta = 0.01 # regularization
-dropout = 0.03 # dropout
+beta = 0 # regularization
+dropout = 0 # dropout
 
 # TODO: refactor this class to create components for layer creation - better stats
 
@@ -26,33 +26,51 @@ class DQN_NNET:
             # We create the placeholders
             self.state_input = tf.placeholder(dtype=tf.float64, shape=[None,self.state_dim], name='state_input')
             self.action_input = tf.placeholder(dtype=tf.float64, shape=[None, self.action_dim], name='action_input')
-            self.Q_input = tf.placeholder(dtype=tf.float64, shape=[None, 1], name='target')
+            self.Q_target = tf.placeholder(dtype=tf.float64, shape=[None, 1], name='target')
 
-            self.W1 = tf.Variable(dtype=tf.float64,
-                                initial_value=tf.random_normal([self.state_dim, NN1_NEURONS],
-                                dtype=tf.float64,
-                                seed=seed,
-                                name='W1'))
+            self.W1 = tf.get_variable('W1',
+                                      dtype=tf.float64,
+                                      shape=[self.state_dim, NN1_NEURONS],
+                                      initializer=tf.initializers.random_normal(seed=seed)
+                                    )
+            
+
+            # self.W1 = tf.Variable(dtype=tf.float64,
+            #                     initial_value=tf.random_normal([self.state_dim, NN1_NEURONS],
+            #                     dtype=tf.float64,
+            #                     seed=seed,
+            #                     name='W1'))
             self.B1 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([NN1_NEURONS], tf.float64),
                                 name='B1')
-            self.layer1 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.state_input, self.W1), self.B1)), keep_prob=(1-dropout), name='layer1_dropout', seed=seed)
+            self.layer1 = tf.nn.elu(tf.add(tf.matmul(self.state_input, self.W1), self.B1))
 
-            self.W2 = tf.Variable(dtype=tf.float64,
-                                initial_value=tf.random_normal([NN1_NEURONS, NN2_NEURONS],
-                                dtype=tf.float64,
-                                seed=seed,
-                                name='W2'))
+            self.W2 = tf.get_variable('W2',
+                                      dtype=tf.float64,
+                                      shape=[NN1_NEURONS, NN2_NEURONS],
+                                      initializer=tf.initializers.random_normal(seed=seed)
+                                    )
+
+            # self.W2 = tf.Variable(dtype=tf.float64,
+            #                     initial_value=tf.random_normal([NN1_NEURONS, NN2_NEURONS],
+            #                     dtype=tf.float64,
+            #                     seed=seed,
+            #                     name='W2'))
             self.B2 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([NN2_NEURONS], tf.float64),
                                 name='B2')
-            self.layer2 = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.layer1, self.W2), self.B2)), keep_prob=(1-dropout), name='layer2_dropout', seed=seed)
+            self.layer2 = tf.nn.elu(tf.add(tf.matmul(self.layer1, self.W2), self.B2))
 
-            self.W_O = tf.Variable(dtype=tf.float64,
-                                initial_value=tf.random_normal([NN2_NEURONS, self.action_dim],
-                                dtype=tf.float64,
-                                seed=seed,
-                                name='W_Output'))
+            self.W_O = tf.get_variable('W_O',
+                                      dtype=tf.float64,
+                                      shape=[NN2_NEURONS, self.action_dim],
+                                      initializer=tf.initializers.random_normal(seed=seed)
+                                    )
+            # self.W_O = tf.Variable(dtype=tf.float64,
+            #                     initial_value=tf.random_normal([NN2_NEURONS, self.action_dim],
+            #                     dtype=tf.float64,
+            #                     seed=seed,
+            #                     name='W_Output'))
             self.B_O = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([self.action_dim], tf.float64),
                                 name='B_Output')
@@ -61,36 +79,40 @@ class DQN_NNET:
             self.Q_value = tf.reduce_sum(tf.multiply(self.output, self.action_input), axis=1, name='Q_value')
 
             # Cost
-            self.cost = tf.reduce_mean(tf.square(self.Q_input - self.Q_value))
+            self.cost = tf.reduce_mean(tf.square(self.Q_target - self.Q_value), name='cost')
 
             # L2 Regularization
             reg = tf.nn.l2_loss(self.W1) + tf.nn.l2_loss(self.W2) + tf.nn.l2_loss(self.W_O)
             
             # Optimizer
             with tf.name_scope("train"):
-                self.cost = tf.reduce_mean(self.cost + reg * beta, name='cost')
-                self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.cost)
+                # self.cost = tf.reduce_mean(self.cost + reg * beta, name='cost')
+                self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+                # self.grads = self.optimizer.compute_gradients(self.cost)
+                # self.grads = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in self.grads if grad is not None]
+                # self.optimizer = self.optimizer.apply_gradients(self.grads)
+                self.optimizer = self.optimizer.minimize(self.cost)
 
             # Tensorboard Stats
-            W1_summary = variable_summaries(self.W1)
-            W2_summary = variable_summaries(self.W2)
-            W_O_summary = variable_summaries(self.W_O)
+            # W1_summary = variable_summaries(self.W1)
+            # W2_summary = variable_summaries(self.W2)
+            # W_O_summary = variable_summaries(self.W_O)
 
-            B1_summary = variable_summaries(self.B1)
-            B2_summary = variable_summaries(self.B2)
-            B_O_summary = variable_summaries(self.B_O)
+            # B1_summary = variable_summaries(self.B1)
+            # B2_summary = variable_summaries(self.B2)
+            # B_O_summary = variable_summaries(self.B_O)
 
-            layer1_summary = variable_summaries(self.layer1)
-            layer2_summary = variable_summaries(self.layer2)
+            # layer1_summary = variable_summaries(self.layer1)
+            # layer2_summary = variable_summaries(self.layer2)
 
             output_summary = variable_summaries(self.output)
             Q_value_summary = variable_summaries(self.Q_value)
             cost_summary = variable_summaries(self.cost)
 
         self.merged_summary = tf.summary.merge(
-                       W1_summary +
-                       W2_summary +
-                       W_O_summary +
+                    #    W1_summary +
+                    #    W2_summary +
+                    #    W_O_summary +
                     #    B1_summary +
                     #    B2_summary +
                     #    B_O_summary +

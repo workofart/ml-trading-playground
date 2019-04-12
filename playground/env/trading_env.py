@@ -8,18 +8,15 @@ from playground.utilities.utils import read_data, cleanup_logs, get_minute_data,
 HOLD_PENALTY = 0
 # TXN_COST = 0.0005
 TXN_COST = 0
-REPEAT_TRADE_THRESHOLD = 15
 
 # Reward
 MIN_REWARD = -2
 MAX_REWARD = 2
-ERROR_COST = 0.005
 
 class TradingEnv():
 
     def __init__(self, data_length, INIT_CASH):
         # Trading Params
-        self.portfolio = []
         self.INIT_CASH = INIT_CASH
         self.cash = self.INIT_CASH
 
@@ -27,7 +24,7 @@ class TradingEnv():
         self.data_length = data_length
         self.episode_total_reward = None
         self.action_space = [0, 1, 2]
-        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC', 'm')[0:data_length] * 1000
+        self.observation_space = read_data('crypto-test-data-82hrs.csv', 'ETHBTC', 'm')[0:data_length] * 100
         self.previous_portfolio = self.cash
         self.reset()
 
@@ -35,7 +32,8 @@ class TradingEnv():
     def reset(self):
         self.episode_total_reward = 0
         self.time_step = 0
-        self.portfolio = [] 
+        # self.portfolio = [] # Complex reward function 
+        self.portfolio = 0
         self.cash = self.INIT_CASH
         self.previous_portfolio = self.cash
         self.error_count = 0
@@ -45,8 +43,8 @@ class TradingEnv():
     def step(self, action, isTrain = False):
         done = False
         state = self._get_obs()
-        reward, mv = self.process_action(action, state) # Complex reward function
-        # reward, mv = self.process_action_plain(action, state) # No error penalty
+        # reward, mv = self.process_action(action, state) # Complex reward function
+        reward, mv = self.process_action_plain(action, state) # No error penalty
 
         # Clip rewards between MIN_REWARD and MAX_REWARD
         # reward = max(MIN_REWARD, min(MAX_REWARD, reward))
@@ -96,7 +94,7 @@ class TradingEnv():
         reward = book_val + (market_val - self.previous_portfolio)
 
         if error:
-            reward -= ERROR_COST
+            reward -= 0 / self.data_length
             self.error_count += 1
             self.permitted_trades.append(2)
 

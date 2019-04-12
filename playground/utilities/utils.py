@@ -19,11 +19,11 @@ def read_data(filename, ticker, freq='raw'):
     data = data.set_index('timestamp')
 
     if freq == 'm':
-        data = get_minute_data(data)
+        data = get_minute_data(data).values
 
-    # data = norm2(data.values, axis=0) # If 1, independently normalize each sample, otherwise (if 0) normalize each feature.
+    # data = norm2(data, axis=0) # If 1, independently normalize each sample, otherwise (if 0) normalize each feature.
     
-    return data.values
+    return data
 
 def normalize(data):
     """
