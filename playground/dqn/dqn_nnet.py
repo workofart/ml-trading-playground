@@ -43,7 +43,7 @@ class DQN_NNET:
             self.B1 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([NN1_NEURONS], tf.float64),
                                 name='B1')
-            self.layer1 = tf.nn.elu(tf.add(tf.matmul(self.state_input, self.W1), self.B1))
+            self.layer1 = tf.nn.tanh(tf.add(tf.matmul(self.state_input, self.W1), self.B1))
 
             self.W2 = tf.get_variable('W2',
                                       dtype=tf.float64,
@@ -59,7 +59,7 @@ class DQN_NNET:
             self.B2 = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([NN2_NEURONS], tf.float64),
                                 name='B2')
-            self.layer2 = tf.nn.elu(tf.add(tf.matmul(self.layer1, self.W2), self.B2))
+            self.layer2 = tf.nn.tanh(tf.add(tf.matmul(self.layer1, self.W2), self.B2))
 
             self.W_O = tf.get_variable('W_O',
                                       dtype=tf.float64,

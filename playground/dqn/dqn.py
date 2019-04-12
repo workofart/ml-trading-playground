@@ -7,7 +7,7 @@ from playground.dqn.dqn_agent import DQN_Agent
 from playground.env.trading_env import TradingEnv
 
 INIT_CASH = 0
-EPISODE = 60000 # Episode limitation
+EPISODE = 50000 # Episode limitation
 BATCH_SIZE = 32 # size of minibatch
 DATA_LENGTH = 500 # How many times steps to use in the data
 # TRAIN_EVERY_N_TIMESTEPS = int(DATA_LENGTH / 12)

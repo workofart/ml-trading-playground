@@ -14,6 +14,8 @@
 
 - Don't nest copying the target network into the training code block because if the training is not done after every timestep, but the copying of the target network is based on timesteps, so there is a possibility that the copying of the network will not get triggered frequently as defined. 
 
+- Using the "tanh" activation function eliminated the use of q-value loss clipping, the q-values became non-linear and not always in a fixed trend (up or down)
+
 ## FAQ
 
 #### Difference between `tf.Variable()` and `tf.get_variable()`

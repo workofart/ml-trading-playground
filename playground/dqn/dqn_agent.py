@@ -7,7 +7,7 @@ from playground.dqn.experience_buffer import Experience_Buffer
 from playground.utilities.utils import variable_summaries, get_latest_run_count, update_target_graph, log_scalars
 
 # Hyper Parameters for DQN
-LEARNING_RATE = 1e-5
+LEARNING_RATE = 1e-6
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.05 # ending value of epislon
 EPSILON_DECAY = 1e-7
@@ -98,8 +98,8 @@ class DQN_Agent():
             if done:
                 y_batch.append(reward_batch[i])
             else:
-                y_batch.append(max(-1, min(reward_batch[i] + GAMMA * target_q_val_batch[i][action], 1)))
-                # y_batch.append(reward_batch[i] + GAMMA * target_q_val_batch[i][action])
+                # y_batch.append(max(-1, min(reward_batch[i] + GAMMA * target_q_val_batch[i][action], 1)))
+                y_batch.append(reward_batch[i] + GAMMA * target_q_val_batch[i][action])
 
         # Train on one batch on the Q-network
         _, c, summary = self.session.run([self.network.optimizer, self.network.cost, self.network.merged_summary],
