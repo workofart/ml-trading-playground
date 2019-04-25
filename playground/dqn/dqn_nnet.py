@@ -1,13 +1,20 @@
 import tensorflow as tf
 import numpy as np
+import configparser
 from playground.utilities.utils import variable_summaries
 
+####### Housing Keeping #######
+
+config_path = 'playground/dqn/config.ini'
+config = configparser.ConfigParser()
+config.read(config_path)
+pCfg = config['dqn_nnet']
 
 # NN Parameters
-NN1_NEURONS = 32
-NN2_NEURONS = 16
-beta = 0 # regularization
-dropout = 0 # dropout
+NN1_NEURONS = int(pCfg['NN1_NEURONS'])
+NN2_NEURONS = int(pCfg['NN2_NEURONS'])
+
+#################################
 
 # TODO: refactor this class to create components for layer creation - better stats
 
@@ -31,46 +38,28 @@ class DQN_NNET:
             self.W1 = tf.get_variable('W1',
                                       dtype=tf.float64,
                                       shape=[self.state_dim, NN1_NEURONS],
-                                      initializer=tf.initializers.random_normal(seed=seed)
-                                    )
-            
-
-            # self.W1 = tf.Variable(dtype=tf.float64,
-            #                     initial_value=tf.random_normal([self.state_dim, NN1_NEURONS],
-            #                     dtype=tf.float64,
-            #                     seed=seed,
-            #                     name='W1'))
-            self.B1 = tf.Variable(dtype=tf.float64,
-                                initial_value=tf.zeros([NN1_NEURONS], tf.float64),
-                                name='B1')
+                                      initializer=tf.initializers.random_normal(seed=seed, stddev=1.5))
+            self.B1 = tf.get_variable('B1',
+                                dtype=tf.float64,
+                                shape=[NN1_NEURONS],
+                                initializer=tf.initializers.zeros())
             self.layer1 = tf.nn.tanh(tf.add(tf.matmul(self.state_input, self.W1), self.B1))
 
             self.W2 = tf.get_variable('W2',
                                       dtype=tf.float64,
                                       shape=[NN1_NEURONS, NN2_NEURONS],
-                                      initializer=tf.initializers.random_normal(seed=seed)
-                                    )
-
-            # self.W2 = tf.Variable(dtype=tf.float64,
-            #                     initial_value=tf.random_normal([NN1_NEURONS, NN2_NEURONS],
-            #                     dtype=tf.float64,
-            #                     seed=seed,
-            #                     name='W2'))
-            self.B2 = tf.Variable(dtype=tf.float64,
-                                initial_value=tf.zeros([NN2_NEURONS], tf.float64),
-                                name='B2')
+                                      initializer=tf.initializers.random_normal(seed=seed, stddev=1.5))
+            self.B2 = tf.get_variable('B2',
+                                dtype=tf.float64,
+                                shape=[NN2_NEURONS],
+                                initializer=tf.initializers.zeros())
             self.layer2 = tf.nn.tanh(tf.add(tf.matmul(self.layer1, self.W2), self.B2))
 
-            self.W_O = tf.get_variable('W_O',
+            self.W_O = tf.get_variable('W_Output',
                                       dtype=tf.float64,
                                       shape=[NN2_NEURONS, self.action_dim],
-                                      initializer=tf.initializers.random_normal(seed=seed)
+                                      initializer=tf.initializers.random_normal(seed=seed, stddev=1.5)
                                     )
-            # self.W_O = tf.Variable(dtype=tf.float64,
-            #                     initial_value=tf.random_normal([NN2_NEURONS, self.action_dim],
-            #                     dtype=tf.float64,
-            #                     seed=seed,
-            #                     name='W_Output'))
             self.B_O = tf.Variable(dtype=tf.float64,
                                 initial_value=tf.zeros([self.action_dim], tf.float64),
                                 name='B_Output')
@@ -81,20 +70,17 @@ class DQN_NNET:
             # Cost
             self.cost = tf.reduce_mean(tf.square(self.Q_target - self.Q_value), name='cost')
 
-            # L2 Regularization
-            reg = tf.nn.l2_loss(self.W1) + tf.nn.l2_loss(self.W2) + tf.nn.l2_loss(self.W_O)
-            
             # Optimizer
             with tf.name_scope("train"):
-                # self.cost = tf.reduce_mean(self.cost + reg * beta, name='cost')
-                self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+                self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.cost)
+
+                # Gradient Clipping
                 # self.grads = self.optimizer.compute_gradients(self.cost)
                 # self.grads = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in self.grads if grad is not None]
                 # self.optimizer = self.optimizer.apply_gradients(self.grads)
-                self.optimizer = self.optimizer.minimize(self.cost)
 
             # Tensorboard Stats
-            # W1_summary = variable_summaries(self.W1)
+            W1_summary = variable_summaries(self.W1)
             # W2_summary = variable_summaries(self.W2)
             # W_O_summary = variable_summaries(self.W_O)
 
@@ -110,7 +96,7 @@ class DQN_NNET:
             cost_summary = variable_summaries(self.cost)
 
         self.merged_summary = tf.summary.merge(
-                    #    W1_summary +
+                       W1_summary +
                     #    W2_summary +
                     #    W_O_summary +
                     #    B1_summary +

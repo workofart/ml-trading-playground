@@ -1,42 +1,53 @@
 import tensorflow as tf
 import numpy as np
-import random, os
+import random, os, configparser
 from collections import deque
 from playground.dqn.dqn_nnet import DQN_NNET
 from playground.dqn.experience_buffer import Experience_Buffer
 from playground.utilities.utils import variable_summaries, get_latest_run_count, update_target_graph, log_scalars
 
-# Hyper Parameters for DQN
-LEARNING_RATE = 1e-6
-INITIAL_EPSILON = 1 # starting value of epsilon
-FINAL_EPSILON = 0.05 # ending value of epislon
-EPSILON_DECAY = 1e-7
-GAMMA = 0.99 # discount factor for q value
-UPDATE_TARGET_GRAPH_FREQ = 4000 # how many timesteps to update target network params
+####### Housing Keeping #######
 
-SAVED_MODEL_PATH = "playground/saved_networks/dqn"
-SAVED_LOG_PATH = "playground/logs/dqn/"
+config_path = 'playground/dqn/config.ini'
+config = configparser.ConfigParser()
+config.read(config_path)
+cfg = config['dqn_agent']
+paths_cfg = config['paths']
+logistics_cfg = config['logistics']
+
+LEARNING_RATE = float(cfg['LEARNING_RATE'])
+INITIAL_EPSILON = float(cfg['INITIAL_EPSILON'])  # starting value of epsilon
+FINAL_EPSILON = float(cfg['FINAL_EPSILON']) # ending value of epislon
+GAMMA = float(cfg['GAMMA']) # discount factor for q value
+UPDATE_TARGET_GRAPH_FREQ = int(logistics_cfg['UPDATE_TARGET_GRAPH_FREQ'])  # how many timesteps to update target network params
+SAVED_MODEL_PATH = paths_cfg['SAVED_MODEL_PATH']
+SAVED_LOG_PATH = paths_cfg['SAVED_LOG_PATH']
 RUN_COUNT = str(get_latest_run_count(SAVED_LOG_PATH))
+TENSORBOARD_LOG_PATH = os.path.join(SAVED_LOG_PATH, RUN_COUNT)
+
+#################################
 
 class DQN_Agent():
 
     def __init__(self, env, eps, isTrain = True, isLoad = False, seed=0):
         # init some parameters
+        self.env = env
         self.epsilon = INITIAL_EPSILON
         self.final_epsilon = FINAL_EPSILON
-        self.env = env
+        self.epsilon_decay = 1 / (env.data_length * eps)
+        self.learning_rate = LEARNING_RATE
         self.total_episodes = eps
         self.isTrain = isTrain
         self.seed = seed
+        
         self.replay_buffer = Experience_Buffer()
         self.state_dim = env.observation_space.shape[1]
         self.action_dim = len(env.action_space)
-        self.learning_rate = LEARNING_RATE
+        
+        # Counters
         self.current_episode = 0
         self.accum_steps = 0
         
-        self.is_updated_target_net = False
-
         # Reset the graph
         tf.reset_default_graph()
         self.network = DQN_NNET(self.state_dim, self.action_dim, self.learning_rate, 'q_network', seed=seed)
@@ -51,14 +62,14 @@ class DQN_Agent():
         self.session.run(self.update_q_network_op_holder)
 
         # Tensorboard
-        self.summary_writer = tf.summary.FileWriter(os.path.join(SAVED_LOG_PATH,RUN_COUNT))
+        self.summary_writer = tf.summary.FileWriter(TENSORBOARD_LOG_PATH)
         self.summary_writer.add_graph(self.session.graph)
 
         # loading networks
         self.saver = tf.train.Saver()
         model_dir = os.path.join(SAVED_MODEL_PATH, str(int(RUN_COUNT) - 1))
         checkpoint = tf.train.get_checkpoint_state(model_dir)
-        if (self.isTrain is False and checkpoint and checkpoint.model_checkpoint_path) or isLoad is True:
+        if (self.isTrain is False or isLoad is True) and checkpoint and checkpoint.model_checkpoint_path:
             self.saver.restore(self.session, checkpoint.model_checkpoint_path)
             print("Successfully loaded:", checkpoint.model_checkpoint_path)
         else:
@@ -66,11 +77,9 @@ class DQN_Agent():
 
         
     def update_target_q_net_if_needed(self):
-        if self.accum_steps % UPDATE_TARGET_GRAPH_FREQ == 0 and self.accum_steps > 0 and self.is_updated_target_net is False:
+        if self.accum_steps % UPDATE_TARGET_GRAPH_FREQ == 0 and self.accum_steps > 0:
             self.session.run(self.update_q_network_op_holder)
-
-            self.is_updated_target_net = True
-            # print('Timesteps:{} | Target Q-network has been updated.'.format(self.env.time_step))
+            # print('Timesteps:{} | Target Q-network has been updated.'.format(self.accum_steps))
 
     def train_dqn_network(self, batch_size=32):
         # Assumes "replay_samples" contains [state, action, reward, next_state, done]
@@ -108,7 +117,7 @@ class DQN_Agent():
                                 self.network.action_input: action_batch,
                                 self.network.state_input: state_batch
                             }
-        )
+                        )
 
         self.summary_writer.add_summary(summary, self.current_episode)
 
@@ -122,16 +131,14 @@ class DQN_Agent():
 
     def act(self, state):
         if self.isTrain is True:
-            self.epsilon = self.final_epsilon + (1 - self.final_epsilon) * np.exp(-EPSILON_DECAY * self.accum_steps)
-            # if self.accum_steps % 500 == 0:
-                # log_scalars(self.summary_writer, 'epsilon', self.epsilon, self.accum_steps)
+            self.epsilon = self.final_epsilon + (1 - self.final_epsilon) * np.exp(-self.epsilon_decay * self.accum_steps)
         if self.isTrain is True and random.random() <= self.epsilon:
             return random.randint(0, self.action_dim - 1)
         else:
             output = self.network.output.eval(feed_dict = {
 			    self.network.state_input:state
 			})[0]
-            if self.current_episode % 50 == 0:
+            if self.current_episode % 100 == 0:
                 log_scalars(self.summary_writer, 'output_buy', output[0], self.accum_steps)
                 log_scalars(self.summary_writer, 'output_sell', output[1], self.accum_steps)
                 log_scalars(self.summary_writer, 'output_hold', output[2], self.accum_steps)

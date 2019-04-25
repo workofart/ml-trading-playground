@@ -16,6 +16,8 @@
 
 - Using the "tanh" activation function eliminated the use of q-value loss clipping, the q-values became non-linear and not always in a fixed trend (up or down)
 
+- Train more frequently once per 40 -> 20 timesteps, increase learning rate to 2e-7, update target graph more frequently once every 4k -> 3k timesteps
+
 ## FAQ
 
 #### Difference between `tf.Variable()` and `tf.get_variable()`
