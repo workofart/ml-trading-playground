@@ -98,7 +98,9 @@ self.train_opt = optimizer.apply_gradients(capped_grads)
 ```
 
 #### Clipping Q-Values
-The problem with the current approach is that the Q-values are initially sparsed out across the 3 actions, and during training, the q-values all increase which results in nothing learned. This is because the best action will always be the action with the highest initialized q-value. After clipping q-values between -1 and 1, the q-values tend to converge around 0 and 1
+The problem with the current approach is that the Q-values are initially sparsed out across the 3 actions, and during training, the q-values all increase which results in nothing learned. This is because the best action will always be the action with the highest initialized q-value. After clipping q-values between -1 and 1, the q-values tend to converge around 0 and 1. However, there isn't any proof that this works.
+
+Reference: https://ai.stackexchange.com/questions/8348/should-the-reward-or-the-q-value-be-clipped-for-reinforcement-learning
 
 #### Dying ReLU Neuron
 Reference: https://datascience.stackexchange.com/questions/5706/what-is-the-dying-relu-problem-in-neural-networks

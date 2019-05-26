@@ -102,7 +102,7 @@ def plot_trades(EP, prices, actions, permitted_trades=None, name='', path=None):
     plt.plot(sells['x'], sells['y'], '.', markersize=2, color='r')
     plt.ylabel('Prices')
     plt.xlabel('Timesteps')
-    plt.title('Agent\'s Intended Actions')
+    plt.title('Agent\'s Actions (EP: %s)' % EP)
     # Permitted Trades
     if permitted_trades is not None and len(permitted_trades) != 0:
         plt.subplot(2,1,2)
@@ -172,8 +172,8 @@ def variable_summaries(var):
     """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
     # Taken from https://www.tensorflow.org/guide/summaries_and_tensorboard
     with tf.name_scope('summaries'):
-        # mean = tf.reduce_mean(var)
-        # out.append(tf.summary.scalar(var.op.name + '_mean', mean))
+        mean = tf.reduce_mean(var)
+        out.append(tf.summary.scalar(var.op.name + '_mean', mean))
         # with tf.name_scope('stddev'):
         #     stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
         # out.append(tf.summary.scalar(var.op.name + '_stddev', stddev))
