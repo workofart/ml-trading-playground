@@ -38,32 +38,42 @@ class DQN_NNET:
             self.W1 = tf.get_variable('W1',
                                       dtype=tf.float64,
                                       shape=[self.state_dim, NN1_NEURONS],
-                                      initializer=tf.initializers.random_normal(seed=seed, stddev=1.5))
+                                      trainable=True,
+                                      initializer=tf.initializers.random_normal(seed=seed))
             self.B1 = tf.get_variable('B1',
                                 dtype=tf.float64,
                                 shape=[NN1_NEURONS],
+                                trainable=True,
                                 initializer=tf.initializers.zeros())
-            self.layer1 = tf.nn.tanh(tf.add(tf.matmul(self.state_input, self.W1), self.B1))
+            self.layer1 = tf.nn.relu(tf.add(tf.matmul(self.state_input, self.W1), self.B1))
 
             self.W2 = tf.get_variable('W2',
                                       dtype=tf.float64,
                                       shape=[NN1_NEURONS, NN2_NEURONS],
-                                      initializer=tf.initializers.random_normal(seed=seed, stddev=1.5))
+                                    #   shape=[NN1_NEURONS, self.action_dim],
+                                      trainable=True,
+                                      initializer=tf.initializers.random_normal(seed=seed))
             self.B2 = tf.get_variable('B2',
                                 dtype=tf.float64,
+                                # shape=[self.action_dim],
                                 shape=[NN2_NEURONS],
+                                trainable=True,
                                 initializer=tf.initializers.zeros())
-            self.layer2 = tf.nn.tanh(tf.add(tf.matmul(self.layer1, self.W2), self.B2))
+            self.layer2 = tf.nn.relu(tf.add(tf.matmul(self.layer1, self.W2), self.B2))
 
             self.W_O = tf.get_variable('W_Output',
                                       dtype=tf.float64,
                                       shape=[NN2_NEURONS, self.action_dim],
-                                      initializer=tf.initializers.random_normal(seed=seed, stddev=1.5)
+                                      trainable=True,
+                                      initializer=tf.initializers.random_normal(seed=seed)
                                     )
-            self.B_O = tf.Variable(dtype=tf.float64,
-                                initial_value=tf.zeros([self.action_dim], tf.float64),
-                                name='B_Output')
+            self.B_O = tf.get_variable('B_Output',
+                                dtype=tf.float64,
+                                shape=[self.action_dim],
+                                trainable=True,
+                                initializer=tf.initializers.zeros())
             self.output = tf.add(tf.matmul(self.layer2, self.W_O), self.B_O, name='output')
+            # self.output = tf.add(tf.matmul(self.layer1, self.W2), self.B2, name='output')
 
             self.Q_value = tf.reduce_sum(tf.multiply(self.output, self.action_input), axis=1, name='Q_value')
 
