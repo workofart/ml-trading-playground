@@ -107,7 +107,7 @@ class DQN_Agent():
             if done:
                 y_batch.append(reward_batch[i])
             else:
-                # y_batch.append(max(-1, min(reward_batch[i] + GAMMA * target_q_val_batch[i][action], 1)))
+                # y_batch.append(max(-1, min(reward_batch[i] + GAMMA * target_q_val_batch[i][action], 1))) # Optional Q-value clipping, see notes.md
                 y_batch.append(reward_batch[i] + GAMMA * target_q_val_batch[i][action])
 
         # Train on one batch on the Q-network

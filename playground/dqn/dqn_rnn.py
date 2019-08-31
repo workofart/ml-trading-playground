@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
+# TODO: Finish this, and test the results
 class DQN_RNN():
     def __init__(self, state_dim, num_time_steps, learning_rate, name):       
         self.state_dim = state_dim

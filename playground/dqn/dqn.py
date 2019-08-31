@@ -58,7 +58,7 @@ def main(isLoad=False):
         agent.current_episode += 1
         log_scalars(agent.summary_writer, 'avg_reward', np.mean(avg_reward_list), i)
 
-        # Complex Reward Function Stats
+        # Complex Reward Function Stats - can blow up log file
         # log_histogram(agent.summary_writer, 'reward_dist', avg_reward_list, i)
         # log_scalars(agent.summary_writer, 'drawdown', np.mean(np.sum(np.array(avg_reward_list) < INIT_CASH, axis=0)), i)
         # log_scalars(agent.summary_writer, 'action_errors', np.mean(agent.env.error_count), i)

@@ -50,12 +50,10 @@ class DQN_NNET:
             self.W2 = tf.get_variable('W2',
                                       dtype=tf.float64,
                                       shape=[NN1_NEURONS, NN2_NEURONS],
-                                    #   shape=[NN1_NEURONS, self.action_dim],
                                       trainable=True,
                                       initializer=tf.initializers.random_normal(seed=seed))
             self.B2 = tf.get_variable('B2',
                                 dtype=tf.float64,
-                                # shape=[self.action_dim],
                                 shape=[NN2_NEURONS],
                                 trainable=True,
                                 initializer=tf.initializers.zeros())
@@ -73,7 +71,6 @@ class DQN_NNET:
                                 trainable=True,
                                 initializer=tf.initializers.zeros())
             self.output = tf.add(tf.matmul(self.layer2, self.W_O), self.B_O, name='output')
-            # self.output = tf.add(tf.matmul(self.layer1, self.W2), self.B2, name='output')
 
             self.Q_value = tf.reduce_sum(tf.multiply(self.output, self.action_input), axis=1, name='Q_value')
 
@@ -118,22 +115,4 @@ class DQN_NNET:
                        Q_value_summary +
                        cost_summary
                        )
-
-        # def relu_layer(self, size_in, size_out, name='relu'):
-        #     with tf.name_scope(name):
-        #         w = tf.Variable(dtype=tf.float64, initial_value=tf.random_normal([size_in, size_out], dtype=tf.float64))
-        #         b = tf.Variable(dtype=tf.float64, initial_value=tf.zeros([size_out], tf.float64))
-        #         layer = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.state_input, w), b)), keep_prob=(1-dropout))
-        #         return layer
-
-        # def fc_layer(self, size_in, size_out, name='fc'):
-        #     with tf.name_scope(name):
-        #         w = tf.Variable(tf.truncated_normal([size_in, size_out], stddev=0.1), name="W")
-        #         b = tf.Variable(tf.constant(0.1, shape=[size_out]), name="B")
-        #         act = tf.matmul(input, w) + b
-        #         tf.summary.histogram("weights", w)
-        #         tf.summary.histogram("biases", b)
-        #         tf.summary.histogram("activations", act)
-        #         return act
-
     
