@@ -7,10 +7,10 @@ Hand-coded Neural Network (without using any 3rd party framework)
 
 ### Dependencies
 ```
-pandas
-numpy
-matplotlib
-sklearn
+pandas=0.24.1 
+numpy=1.16.0
+matplotlib=3.0.2
+scikit-learn=0.20.2
 ```
 
 ### Run

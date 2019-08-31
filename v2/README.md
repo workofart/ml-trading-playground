@@ -7,11 +7,11 @@ Keras-based Neural Network
 
 ### Dependencies
 ```
-pandas
-numpy
-matplotlib
-sklearn
-keras
+pandas=0.24.1 
+numpy=1.16.0
+matplotlib=3.0.2
+scikit-learn=0.20.2
+keras=2.2.4
 ```
 
 ### Run
