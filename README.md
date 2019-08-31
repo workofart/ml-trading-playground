@@ -30,6 +30,7 @@ Check out the [accompanying tutorial](http://www.henrypan.com/blog/machine-learn
 The common assumptions are:
 - The agent is allowed to enter both long and short positions regardless of current cash balance
 
+Approaches:
 - [Policy Gradient (PG)](https://github.com/workofart/ml-trading-playground/tree/master/playground/pg)
 - [Deep Q-Network/Learning (DQN)](https://github.com/workofart/ml-trading-playground/tree/master/playground/dqn)
 - [Actor-Critic (AC)](https://github.com/workofart/ml-trading-playground/tree/master/playground/ac)
