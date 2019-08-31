@@ -8,13 +8,16 @@ I wanted to first try to predict prices given the current, high, low prices and 
 > All 3 versions follow this architecture:
 4 Layers, **Relu Activation Function** for first (n-1) layers, with last layer being **linear output**.
 
-- [Version 1](https://github.com/workofart/work-trader/tree/master/v1)
-- [Version 2](https://github.com/workofart/work-trader/tree/master/v2)
-- [Version 3](https://github.com/workofart/work-trader/tree/master/v3)
+- [Version 1 - Raw Python](https://github.com/workofart/work-trader/tree/master/v1)
+- [Version 2 - Keras](https://github.com/workofart/work-trader/tree/master/v2)
+- [Version 3 - TensorFlow](https://github.com/workofart/work-trader/tree/master/v3)
 
 [Accompanying Tutorial](http://www.henrypan.com/blog/machine-learning/2019/03/20/ml-tut-price-prediction.html)
 
 
 ## Using Reinforcement Learning to Trade
 
-- In Progress
+- [Policy Gradient (PG)](https://github.com/workofart/ml-trading-playground/tree/master/playground/pg)
+- [Deep Q-Network/Learning (DQN)](https://github.com/workofart/ml-trading-playground/tree/master/playground/dqn)
+- [Actor-Critic (AC)](https://github.com/workofart/ml-trading-playground/tree/master/playground/ac)
+- [Asynchronous Advantage Actor-Critic (A3C)](https://github.com/workofart/ml-trading-playground/tree/master/playground/a3c)
