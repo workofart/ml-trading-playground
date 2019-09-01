@@ -17,3 +17,7 @@ keras=2.2.4
 ### Run
 
 `python main.py`
+
+### Result
+After 6000 iterations:
+- Loss: 6.39e-4

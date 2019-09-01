@@ -14,7 +14,7 @@ price, volume, high price, low price of a given timestep
 # hyperparameters
 batch_size = 32 # every how many episodes to do a param update?
 learning_rate = 1e-4 # feel free to play with this to train faster or more stably.
-episodes = 100
+episodes = 6000
 
 def main():
     data = read_data('crypto-test-data-82hrs.csv', 'ETHBTC')

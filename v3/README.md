@@ -17,3 +17,7 @@ tensorflow=1.12.0
 ### Run
 
 `python main.py`
+
+### Result
+After 6000 iterations:
+- Cost: 7.60e-4

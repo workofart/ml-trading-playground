@@ -16,3 +16,11 @@ scikit-learn=0.20.2
 ### Run
 
 `python main.py`
+
+
+### Result
+After 6000 iterations:
+- Cost: 7.60e-4
+
+### Reference
+Adapted from the Coursera Deep Learning course's [homework code](https://github.com/Kulbear/deep-learning-coursera/tree/master/Neural%20Networks%20and%20Deep%20Learning)

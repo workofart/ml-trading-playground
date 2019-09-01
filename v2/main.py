@@ -32,9 +32,9 @@ model.add(Dense(16, input_dim=X_train.shape[1], activation='relu'))
 model.add(Dense(6, activation='relu'))
 model.add(Dense(Y_train.shape[1]))
 model.compile(optimizer=SGD(lr=0.03), loss='mse') # Stochastic Gradient Descent
-# model.compile(optimizer=Adagrad(lr=0.01), loss='mse') # Adam, Currently in sync with v1, use SGD
+# model.compile(optimizer=Adagrad(lr=0.01), loss='mse') # Adam, to be in sync with v1, use SGD
 
-model.fit(X_train, Y_train, epochs=6000, batch_size=X_train.shape[0]) # Currently in sync with v1, no batch training
+model.fit(X_train, Y_train, epochs=6000, batch_size=X_train.shape[0]) # To be in sync with v1, no batch training
 
 y_hat_train = model.predict(X_train, batch_size=X_train.shape[0])
 evaluate_result(y_hat_train, X_train, Y_train, model, 'train')
