@@ -20,4 +20,4 @@ tensorflow=1.12.0
 
 ### Result
 After 6000 iterations:
-- Cost: 7.60e-4
+- Cost: 5.92e-4
