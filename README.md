@@ -1,4 +1,4 @@
-# Work-trader
+# Machine Learning in Finance
 There are 2 parts to this project. The first part is for me to learn deep learning and to implement neural networks from scratch. The second part is to learn reinforcement learning and apply and evaluate various techniques to teach an agent to trade.
 
 
