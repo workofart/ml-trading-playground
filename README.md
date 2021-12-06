@@ -22,7 +22,7 @@ All 3 versions follow this architecture:
 
 [Version 3 - TensorFlow](https://github.com/workofart/work-trader/tree/master/v3)
 
-Check out the [accompanying tutorial](http://www.henrypan.com/blog/machine-learning/2019/03/20/ml-tut-price-prediction.html)
+Check out the [accompanying tutorial](https://www.henrypan.com/blog/2019-03-20-ml-tut-price-prediction/)
 
 
 ## Using Reinforcement Learning to Trade
